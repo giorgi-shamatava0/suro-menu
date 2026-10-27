@@ -1,0 +1,354 @@
+- generic [ref=e2]:
+  - banner [ref=e3]:
+    - generic [ref=e4]:
+      - heading "Three directions for Suro" [level=1] [ref=e5]
+      - paragraph [ref=e6]: "Each phone scrolls. Try the language switch: the layouts must hold Georgian, English and Russian. Prices are samples from the old draft."
+    - group "Language" [ref=e7]:
+      - 'button "áƒ¥áƒáƒ áƒ—" [pressed] [ref=e8] [cursor=pointer]'
+      - button "EN" [ref=e9] [cursor=pointer]
+      - button "RU" [ref=e10] [cursor=pointer]
+  - generic [ref=e11]:
+    - generic [ref=e12]:
+      - heading "A. The name as a monument" [level=2] [ref=e13]
+      - paragraph [ref=e14]: "áƒ¡áƒ£áƒ áƒ\x9d is the headline. It slides across a window onto the fern ceiling, and every dish is set as a poster line."
+      - generic [ref=e16]:
+        - generic [ref=e17]:
+          - generic [ref=e18]: "áƒ¡áƒ£áƒ áƒ\x9d"
+          - group "Language" [ref=e19]:
+            - 'button "áƒ¥áƒ" [pressed] [ref=e20] [cursor=pointer]'
+            - button "EN" [ref=e21] [cursor=pointer]
+            - button "RU" [ref=e22] [cursor=pointer]
+        - generic [ref=e23]:
+          - generic [aria-hidden] [ref=e24]:
+            - generic:
+              - generic:
+                - generic: "áƒ¡áƒ£áƒ áƒ\x9d"
+                - generic: "áƒ¡áƒ£áƒ áƒ\x9d"
+                - generic: "áƒ¡áƒ£áƒ áƒ\x9d"
+                - generic: "áƒ¡áƒ£áƒ áƒ\x9d"
+              - generic:
+                - generic: "áƒ¡áƒ£áƒ áƒ\x9d"
+                - generic: "áƒ¡áƒ£áƒ áƒ\x9d"
+                - generic: "áƒ¡áƒ£áƒ áƒ\x9d"
+                - generic: "áƒ¡áƒ£áƒ áƒ\x9d"
+            - generic:
+              - generic:
+                - generic: "áƒ¡áƒ£áƒ áƒ\x9d"
+                - generic: "áƒ¡áƒ£áƒ áƒ\x9d"
+                - generic: "áƒ¡áƒ£áƒ áƒ\x9d"
+                - generic: "áƒ¡áƒ£áƒ áƒ\x9d"
+              - generic:
+                - generic: "áƒ¡áƒ£áƒ áƒ\x9d"
+                - generic: "áƒ¡áƒ£áƒ áƒ\x9d"
+                - generic: "áƒ¡áƒ£áƒ áƒ\x9d"
+                - generic: "áƒ¡áƒ£áƒ áƒ\x9d"
+          - generic [ref=e26]:
+            - 'heading "áƒ™áƒáƒ¤áƒ”-áƒ‘áƒáƒ¦áƒ˜ áƒ’áƒ•áƒ˜áƒ›áƒ áƒ”áƒ‘áƒ˜áƒ¡ áƒ¥áƒ•áƒ”áƒ¨" [level=1] [ref=e27]'
+            - paragraph [ref=e28]: "áƒ§áƒ\x9dáƒ•áƒ”áƒšáƒ“áƒ¦áƒ” 11:00â€“23:00 Â· áƒ¬áƒ\x9dáƒ—áƒœáƒ” áƒ“áƒ\x90áƒ“áƒ˜áƒ\x90áƒœáƒ˜áƒ¡ 12"
+          - 'button "áƒ›áƒ”áƒœáƒ˜áƒ£áƒ¡ áƒœáƒáƒ®áƒ•áƒ" [ref=e29] [cursor=pointer]'
+        - navigation "Categories" [ref=e30]:
+          - 'link "áƒ¬áƒáƒ¡áƒáƒ®áƒ”áƒ›áƒ¡áƒ”áƒ‘áƒ”áƒšáƒ˜" [ref=e31] [cursor=pointer]':
+            - /url: "#starters"
+          - link "áƒ¡áƒ£áƒžáƒ”áƒ‘áƒ˜" [ref=e32] [cursor=pointer]:
+            - /url: "#soups"
+          - 'link "áƒ¡áƒáƒšáƒáƒ—áƒ”áƒ‘áƒ˜" [ref=e33] [cursor=pointer]':
+            - /url: "#salads"
+          - 'link "áƒžáƒáƒ¡áƒ¢áƒ" [ref=e34] [cursor=pointer]':
+            - /url: "#pasta"
+          - 'link "áƒ«áƒ˜áƒ áƒ˜áƒ—áƒáƒ“áƒ˜" [ref=e35] [cursor=pointer]':
+            - /url: "#mains"
+          - 'link "áƒ¦áƒ£áƒ›áƒ”áƒšáƒ˜áƒ“áƒáƒœ" [ref=e36] [cursor=pointer]':
+            - /url: "#oven"
+          - 'link "áƒ§áƒáƒ•áƒ" [ref=e37] [cursor=pointer]':
+            - /url: "#coffee"
+          - 'link "áƒ©áƒáƒ˜" [ref=e38] [cursor=pointer]':
+            - /url: "#tea"
+          - link "áƒ›áƒ˜áƒšáƒ¥áƒ¨áƒ”áƒ˜áƒ¥áƒ˜" [ref=e39] [cursor=pointer]:
+            - /url: "#shakes"
+          - 'link "áƒ•áƒáƒ¤áƒšáƒ˜" [ref=e40] [cursor=pointer]':
+            - /url: "#waffles"
+          - link "áƒ“áƒ”áƒ¡áƒ”áƒ áƒ¢áƒ˜" [ref=e41] [cursor=pointer]:
+            - /url: "#desserts"
+        - generic [ref=e42]:
+          - 'heading "áƒ¦áƒ£áƒ›áƒ”áƒšáƒ˜áƒ“áƒáƒœ" [level=2] [ref=e43]'
+          - generic [ref=e44]:
+            - article [ref=e45]:
+              - 'heading "áƒ¡áƒ£áƒ áƒáƒ¡ áƒ®áƒáƒáƒáƒžáƒ£áƒ áƒ˜" [level=3] [ref=e46]'
+              - generic [ref=e47]:
+                - generic [ref=e48]:
+                  - text: "áƒ˜áƒ›áƒ”áƒ áƒ£áƒšáƒ˜ áƒ§áƒ•áƒ”áƒšáƒ˜ áƒ“áƒ\x90 áƒ¡áƒ£áƒšáƒ’áƒ£áƒœáƒ˜ áƒ©áƒ•áƒ”áƒœáƒ¡ áƒ¡áƒ\x90áƒ¤áƒ˜áƒ áƒ›áƒ\x9d áƒªáƒ\x9dáƒ›áƒ–áƒ”"
+                  - generic [ref=e49]: "áƒ¡áƒ\x90áƒ¤áƒ˜áƒ áƒ›áƒ\x9d Â· áƒ•áƒ”áƒ’áƒ”áƒ¢áƒ\x90áƒ áƒ˜áƒ\x90áƒœáƒ£áƒšáƒ˜"
+                - generic [ref=e50]: 22â‚¾
+            - article [ref=e51]:
+              - 'heading "áƒ®áƒáƒáƒáƒžáƒ£áƒ áƒ˜ áƒ¢áƒ áƒ˜áƒ£áƒ¤áƒ”áƒšáƒ˜áƒ—" [level=3] [ref=e52]'
+              - generic [ref=e53]:
+                - generic [ref=e54]:
+                  - text: "áƒ˜áƒ›áƒ”áƒ áƒ£áƒšáƒ˜ áƒ§áƒ•áƒ”áƒšáƒ˜, áƒ¡áƒ£áƒšáƒ’áƒ£áƒœáƒ˜, áƒ¢áƒ áƒ˜áƒ£áƒ¤áƒ”áƒšáƒ˜áƒ¡ áƒžáƒ\x90áƒ¡áƒ¢áƒ\x90"
+                  - generic [ref=e55]: "áƒ•áƒ”áƒ’áƒ”áƒ¢áƒ\x90áƒ áƒ˜áƒ\x90áƒœáƒ£áƒšáƒ˜"
+                - generic [ref=e56]: 32â‚¾
+            - article [ref=e57]:
+              - 'heading "áƒ¡áƒ£áƒ áƒáƒ¡ áƒšáƒáƒ‘áƒ˜áƒáƒœáƒ˜" [level=3] [ref=e58]'
+              - generic [ref=e59]:
+                - generic [ref=e60]:
+                  - text: "áƒšáƒ\x9dáƒ‘áƒ˜áƒ\x9d áƒ“áƒ\x90 áƒ¯áƒ\x9dáƒœáƒ¯áƒ\x9dáƒšáƒ˜, áƒ›áƒ¬áƒœáƒ˜áƒšáƒ˜ áƒ¬áƒ˜áƒ¬áƒ\x90áƒ™áƒ˜áƒ— áƒ\x90áƒœ áƒ®áƒ\x90áƒšáƒ\x90áƒžáƒ”áƒœáƒ˜áƒ\x9dáƒ—áƒ˜"
+                  - generic [ref=e61]: "áƒ¡áƒ\x90áƒ¤áƒ˜áƒ áƒ›áƒ\x9d Â· áƒ•áƒ”áƒ’áƒ\x90áƒœáƒ£áƒ áƒ˜"
+                - generic [ref=e62]: 16â‚¾
+            - article [ref=e63]:
+              - 'heading "áƒšáƒáƒ‘áƒ˜áƒáƒœáƒ˜ áƒšáƒáƒ áƒ˜áƒ—" [level=3] [ref=e64]'
+              - generic [ref=e65]:
+                - generic [ref=e66]: "áƒ¡áƒ\x90áƒ¤áƒ˜áƒ áƒ›áƒ\x9d áƒªáƒ\x9dáƒ›áƒ˜, áƒšáƒ\x9dáƒ‘áƒ˜áƒ\x9d, áƒšáƒ\x9dáƒ áƒ˜"
+                - generic [ref=e67]: 19â‚¾
+            - article [ref=e68]:
+              - 'heading "áƒ›áƒáƒ áƒ’áƒáƒ áƒ˜áƒ¢áƒ" [level=3] [ref=e69]'
+              - generic [ref=e70]:
+                - generic [ref=e71]:
+                  - text: "áƒ›áƒ\x9dáƒªáƒ\x90áƒ áƒ”áƒšáƒ\x90, áƒžáƒ\x90áƒ áƒ›áƒ”áƒ–áƒ\x90áƒœáƒ˜"
+                  - generic [ref=e72]: "áƒ•áƒ”áƒ’áƒ”áƒ¢áƒ\x90áƒ áƒ˜áƒ\x90áƒœáƒ£áƒšáƒ˜"
+                - generic [ref=e73]: 21â‚¾
+            - article [ref=e74]:
+              - 'heading "áƒžáƒ”áƒžáƒ”áƒ áƒáƒœáƒ˜" [level=3] [ref=e75]'
+              - generic [ref=e76]:
+                - generic [ref=e77]: "áƒ›áƒ\x9dáƒªáƒ\x90áƒ áƒ”áƒšáƒ\x90, áƒžáƒ”áƒžáƒ”áƒ áƒ\x9dáƒœáƒ˜, áƒžáƒ\x9dáƒ›áƒ˜áƒ“áƒ\x9dáƒ áƒ˜, áƒžáƒ\x90áƒ áƒ›áƒ”áƒ–áƒ\x90áƒœáƒ˜"
+                - generic [ref=e78]: 25â‚¾
+            - article [ref=e79]:
+              - 'heading "áƒáƒ—áƒ®áƒ˜ áƒ§áƒ•áƒ”áƒšáƒ˜" [level=3] [ref=e80]'
+              - generic [ref=e81]:
+                - generic [ref=e82]:
+                  - text: "áƒžáƒ\x90áƒ áƒ›áƒ”áƒ–áƒ\x90áƒœáƒ˜, áƒ›áƒ\x9dáƒªáƒ\x90áƒ áƒ”áƒšáƒ\x90, áƒ’áƒ\x90áƒ£áƒ“áƒ\x90, áƒšáƒ£áƒ áƒ¯áƒ˜ áƒ§áƒ•áƒ”áƒšáƒ˜"
+                  - generic [ref=e83]: "áƒ•áƒ”áƒ’áƒ”áƒ¢áƒ\x90áƒ áƒ˜áƒ\x90áƒœáƒ£áƒšáƒ˜"
+                - generic [ref=e84]: 27â‚¾
+            - article [ref=e85]:
+              - heading "áƒ¤áƒ£áƒœáƒ’áƒ˜" [level=3] [ref=e86]
+              - generic [ref=e87]:
+                - generic [ref=e88]:
+                  - text: "áƒ›áƒ\x9dáƒªáƒ\x90áƒ áƒ”áƒšáƒ\x90, áƒžáƒ\x90áƒ áƒ›áƒ”áƒ–áƒ\x90áƒœáƒ˜, áƒ¡áƒ\x9dáƒ™áƒ\x9d, áƒ–áƒ”áƒ—áƒ˜áƒ¡áƒ®áƒ˜áƒšáƒ˜"
+                  - generic [ref=e89]: "áƒ•áƒ”áƒ’áƒ”áƒ¢áƒ\x90áƒ áƒ˜áƒ\x90áƒœáƒ£áƒšáƒ˜"
+                - generic [ref=e90]: 24â‚¾
+            - article [ref=e91]:
+              - 'heading "áƒ§áƒ•áƒ”áƒšáƒ˜áƒ¡ áƒ“áƒáƒ¤áƒ" [level=3] [ref=e92]'
+              - generic [ref=e93]:
+                - generic [ref=e94]:
+                  - text: "áƒ¡áƒ£áƒšáƒ’áƒ£áƒœáƒ˜, áƒ’áƒ\x90áƒ£áƒ“áƒ\x90, áƒšáƒ£áƒ áƒ¯áƒ˜ áƒ§áƒ•áƒ”áƒšáƒ˜, áƒ©áƒ”áƒ“áƒ\x90áƒ áƒ˜, áƒ—áƒ\x90áƒ¤áƒšáƒ˜, áƒ–áƒ”áƒ—áƒ˜áƒ¡áƒ®áƒ˜áƒšáƒ˜, áƒ®áƒ›áƒ”áƒšáƒ˜ áƒ®áƒ˜áƒšáƒ˜, áƒ—áƒ®áƒ˜áƒšáƒ˜"
+                  - generic [ref=e95]: "áƒ•áƒ”áƒ’áƒ”áƒ¢áƒ\x90áƒ áƒ˜áƒ\x90áƒœáƒ£áƒšáƒ˜"
+                - generic [ref=e96]: 34â‚¾
+        - generic [ref=e97]:
+          - generic [ref=e98]:
+            - generic [ref=e99]:
+              - generic [ref=e100]: "áƒ›áƒ˜áƒ¡áƒ\x90áƒ›áƒ\x90áƒ áƒ—áƒ˜"
+              - text: "áƒ¬áƒ\x9dáƒ—áƒœáƒ” áƒ“áƒ\x90áƒ“áƒ˜áƒ\x90áƒœáƒ˜áƒ¡ 12, áƒ—áƒ‘áƒ˜áƒšáƒ˜áƒ¡áƒ˜"
+            - generic [ref=e101]:
+              - generic [ref=e102]: "áƒ¡áƒ\x90áƒ\x90áƒ—áƒ”áƒ‘áƒ˜"
+              - text: "áƒ§áƒ\x9dáƒ•áƒ”áƒšáƒ“áƒ¦áƒ” 11:00â€“23:00"
+            - generic [ref=e103]:
+              - generic [ref=e104]: "áƒ¢áƒ”áƒšáƒ”áƒ¤áƒ\x9dáƒœáƒ˜"
+              - text: 598 33 70 20
+            - generic [ref=e105]:
+              - generic [ref=e106]: Instagram
+              - text: "@suro"
+          - generic [ref=e107]: "áƒ¡áƒ£áƒ áƒ\x9d"
+      - generic [ref=e108]:
+        - generic [ref=e109]:
+          - generic [ref=e110]: Feels like
+          - text: A gallery poster at night. Bold and memorable, the most "designed" of the three.
+        - generic [ref=e111]:
+          - generic [ref=e112]: Trade-off
+          - text: Big type means more scrolling through long categories.
+    - generic [ref=e113]:
+      - heading "B. The place carries it" [level=2] [ref=e114]
+      - paragraph [ref=e115]: Your real room fills the first screen. The menu below is calm paper, and the picture band above the list changes as you scroll.
+      - generic [ref=e117]:
+        - generic [ref=e118]:
+          - generic [ref=e119]:
+            - img "Hanging ferns in coir baskets under Edison bulbs at Suro" [ref=e120]
+            - group "Language" [ref=e121]:
+              - 'button "áƒ¥áƒ" [pressed] [ref=e122] [cursor=pointer]'
+              - button "EN" [ref=e123] [cursor=pointer]
+              - button "RU" [ref=e124] [cursor=pointer]
+          - generic [ref=e125]:
+            - generic [ref=e126]:
+              - paragraph [ref=e127]:
+                - generic [ref=e128]: "áƒ™áƒ\x90áƒ¤áƒ”-áƒ‘áƒ\x90áƒ¦áƒ˜ áƒ’áƒ•áƒ˜áƒ›áƒ áƒ”áƒ‘áƒ˜áƒ¡ áƒ¥áƒ•áƒ”áƒ¨"
+                - text: "áƒ§áƒ\x9dáƒ•áƒ”áƒšáƒ“áƒ¦áƒ” 11:00â€“23:00 Â· áƒ¬áƒ\x9dáƒ—áƒœáƒ” áƒ“áƒ\x90áƒ“áƒ˜áƒ\x90áƒœáƒ˜áƒ¡ 12"
+              - 'button "áƒ›áƒ”áƒœáƒ˜áƒ£áƒ¡ áƒœáƒáƒ®áƒ•áƒ" [ref=e129] [cursor=pointer]'
+            - 'heading "áƒ¡áƒ£áƒ áƒ" [level=1] [ref=e130]'
+        - generic [ref=e131]:
+          - navigation "Categories" [ref=e132]:
+            - 'link "áƒ¬áƒáƒ¡áƒáƒ®áƒ”áƒ›áƒ¡áƒ”áƒ‘áƒ”áƒšáƒ˜" [ref=e133] [cursor=pointer]':
+              - /url: "#starters"
+            - link "áƒ¡áƒ£áƒžáƒ”áƒ‘áƒ˜" [ref=e134] [cursor=pointer]:
+              - /url: "#soups"
+            - 'link "áƒ¡áƒáƒšáƒáƒ—áƒ”áƒ‘áƒ˜" [ref=e135] [cursor=pointer]':
+              - /url: "#salads"
+            - 'link "áƒžáƒáƒ¡áƒ¢áƒ" [ref=e136] [cursor=pointer]':
+              - /url: "#pasta"
+            - 'link "áƒ«áƒ˜áƒ áƒ˜áƒ—áƒáƒ“áƒ˜" [ref=e137] [cursor=pointer]':
+              - /url: "#mains"
+            - 'link "áƒ¦áƒ£áƒ›áƒ”áƒšáƒ˜áƒ“áƒáƒœ" [ref=e138] [cursor=pointer]':
+              - /url: "#oven"
+            - 'link "áƒ§áƒáƒ•áƒ" [ref=e139] [cursor=pointer]':
+              - /url: "#coffee"
+            - 'link "áƒ©áƒáƒ˜" [ref=e140] [cursor=pointer]':
+              - /url: "#tea"
+            - link "áƒ›áƒ˜áƒšáƒ¥áƒ¨áƒ”áƒ˜áƒ¥áƒ˜" [ref=e141] [cursor=pointer]:
+              - /url: "#shakes"
+            - 'link "áƒ•áƒáƒ¤áƒšáƒ˜" [ref=e142] [cursor=pointer]':
+              - /url: "#waffles"
+            - link "áƒ“áƒ”áƒ¡áƒ”áƒ áƒ¢áƒ˜" [ref=e143] [cursor=pointer]:
+              - /url: "#desserts"
+          - generic [ref=e145]:
+            - 'heading "áƒ¦áƒ£áƒ›áƒ”áƒšáƒ˜áƒ“áƒáƒœ" [level=2] [ref=e146]'
+            - generic [ref=e147]:
+              - article [ref=e148]:
+                - 'heading "áƒ¡áƒ£áƒ áƒáƒ¡ áƒ®áƒáƒáƒáƒžáƒ£áƒ áƒ˜" [level=3] [ref=e149]'
+                - generic [ref=e150]: 22â‚¾
+                - generic [ref=e151]: "áƒ˜áƒ›áƒ”áƒ áƒ£áƒšáƒ˜ áƒ§áƒ•áƒ”áƒšáƒ˜ áƒ“áƒ\x90 áƒ¡áƒ£áƒšáƒ’áƒ£áƒœáƒ˜ áƒ©áƒ•áƒ”áƒœáƒ¡ áƒ¡áƒ\x90áƒ¤áƒ˜áƒ áƒ›áƒ\x9d áƒªáƒ\x9dáƒ›áƒ–áƒ”áƒ¡áƒ\x90áƒ¤áƒ˜áƒ áƒ›áƒ\x9d Â· áƒ•áƒ”áƒ’áƒ”áƒ¢áƒ\x90áƒ áƒ˜áƒ\x90áƒœáƒ£áƒšáƒ˜"
+              - article [ref=e152]:
+                - 'heading "áƒ®áƒáƒáƒáƒžáƒ£áƒ áƒ˜ áƒ¢áƒ áƒ˜áƒ£áƒ¤áƒ”áƒšáƒ˜áƒ—" [level=3] [ref=e153]'
+                - generic [ref=e154]: 32â‚¾
+                - generic: "áƒ˜áƒ›áƒ”áƒ áƒ£áƒšáƒ˜ áƒ§áƒ•áƒ”áƒšáƒ˜, áƒ¡áƒ£áƒšáƒ’áƒ£áƒœáƒ˜, áƒ¢áƒ áƒ˜áƒ£áƒ¤áƒ”áƒšáƒ˜áƒ¡ áƒžáƒ\x90áƒ¡áƒ¢áƒ\x90áƒ•áƒ”áƒ’áƒ”áƒ¢áƒ\x90áƒ áƒ˜áƒ\x90áƒœáƒ£áƒšáƒ˜"
+              - article [ref=e155]:
+                - 'heading "áƒ¡áƒ£áƒ áƒáƒ¡ áƒšáƒáƒ‘áƒ˜áƒáƒœáƒ˜" [level=3] [ref=e156]'
+                - generic [ref=e157]: 16â‚¾
+                - generic: "áƒšáƒ\x9dáƒ‘áƒ˜áƒ\x9d áƒ“áƒ\x90 áƒ¯áƒ\x9dáƒœáƒ¯áƒ\x9dáƒšáƒ˜, áƒ›áƒ¬áƒœáƒ˜áƒšáƒ˜ áƒ¬áƒ˜áƒ¬áƒ\x90áƒ™áƒ˜áƒ— áƒ\x90áƒœ áƒ®áƒ\x90áƒšáƒ\x90áƒžáƒ”áƒœáƒ˜áƒ\x9dáƒ—áƒ˜áƒ¡áƒ\x90áƒ¤áƒ˜áƒ áƒ›áƒ\x9d Â· áƒ•áƒ”áƒ’áƒ\x90áƒœáƒ£áƒ áƒ˜"
+              - article [ref=e158]:
+                - 'heading "áƒšáƒáƒ‘áƒ˜áƒáƒœáƒ˜ áƒšáƒáƒ áƒ˜áƒ—" [level=3] [ref=e159]'
+                - generic [ref=e160]: 19â‚¾
+                - generic: "áƒ¡áƒ\x90áƒ¤áƒ˜áƒ áƒ›áƒ\x9d áƒªáƒ\x9dáƒ›áƒ˜, áƒšáƒ\x9dáƒ‘áƒ˜áƒ\x9d, áƒšáƒ\x9dáƒ áƒ˜"
+              - article [ref=e161]:
+                - 'heading "áƒ›áƒáƒ áƒ’áƒáƒ áƒ˜áƒ¢áƒ" [level=3] [ref=e162]'
+                - generic [ref=e163]: 21â‚¾
+                - generic: "áƒ›áƒ\x9dáƒªáƒ\x90áƒ áƒ”áƒšáƒ\x90, áƒžáƒ\x90áƒ áƒ›áƒ”áƒ–áƒ\x90áƒœáƒ˜áƒ•áƒ”áƒ’áƒ”áƒ¢áƒ\x90áƒ áƒ˜áƒ\x90áƒœáƒ£áƒšáƒ˜"
+              - article [ref=e164]:
+                - 'heading "áƒžáƒ”áƒžáƒ”áƒ áƒáƒœáƒ˜" [level=3] [ref=e165]'
+                - generic [ref=e166]: 25â‚¾
+                - generic: "áƒ›áƒ\x9dáƒªáƒ\x90áƒ áƒ”áƒšáƒ\x90, áƒžáƒ”áƒžáƒ”áƒ áƒ\x9dáƒœáƒ˜, áƒžáƒ\x9dáƒ›áƒ˜áƒ“áƒ\x9dáƒ áƒ˜, áƒžáƒ\x90áƒ áƒ›áƒ”áƒ–áƒ\x90áƒœáƒ˜"
+              - article [ref=e167]:
+                - 'heading "áƒáƒ—áƒ®áƒ˜ áƒ§áƒ•áƒ”áƒšáƒ˜" [level=3] [ref=e168]'
+                - generic [ref=e169]: 27â‚¾
+                - generic: "áƒžáƒ\x90áƒ áƒ›áƒ”áƒ–áƒ\x90áƒœáƒ˜, áƒ›áƒ\x9dáƒªáƒ\x90áƒ áƒ”áƒšáƒ\x90, áƒ’áƒ\x90áƒ£áƒ“áƒ\x90, áƒšáƒ£áƒ áƒ¯áƒ˜ áƒ§áƒ•áƒ”áƒšáƒ˜áƒ•áƒ”áƒ’áƒ”áƒ¢áƒ\x90áƒ áƒ˜áƒ\x90áƒœáƒ£áƒšáƒ˜"
+              - article [ref=e170]:
+                - heading "áƒ¤áƒ£áƒœáƒ’áƒ˜" [level=3] [ref=e171]
+                - generic [ref=e172]: 24â‚¾
+                - generic: "áƒ›áƒ\x9dáƒªáƒ\x90áƒ áƒ”áƒšáƒ\x90, áƒžáƒ\x90áƒ áƒ›áƒ”áƒ–áƒ\x90áƒœáƒ˜, áƒ¡áƒ\x9dáƒ™áƒ\x9d, áƒ–áƒ”áƒ—áƒ˜áƒ¡áƒ®áƒ˜áƒšáƒ˜áƒ•áƒ”áƒ’áƒ”áƒ¢áƒ\x90áƒ áƒ˜áƒ\x90áƒœáƒ£áƒšáƒ˜"
+              - article [ref=e173]:
+                - 'heading "áƒ§áƒ•áƒ”áƒšáƒ˜áƒ¡ áƒ“áƒáƒ¤áƒ" [level=3] [ref=e174]'
+                - generic [ref=e175]: 34â‚¾
+                - generic: "áƒ¡áƒ£áƒšáƒ’áƒ£áƒœáƒ˜, áƒ’áƒ\x90áƒ£áƒ“áƒ\x90, áƒšáƒ£áƒ áƒ¯áƒ˜ áƒ§áƒ•áƒ”áƒšáƒ˜, áƒ©áƒ”áƒ“áƒ\x90áƒ áƒ˜, áƒ—áƒ\x90áƒ¤áƒšáƒ˜, áƒ–áƒ”áƒ—áƒ˜áƒ¡áƒ®áƒ˜áƒšáƒ˜, áƒ®áƒ›áƒ”áƒšáƒ˜ áƒ®áƒ˜áƒšáƒ˜, áƒ—áƒ®áƒ˜áƒšáƒ˜áƒ•áƒ”áƒ’áƒ”áƒ¢áƒ\x90áƒ áƒ˜áƒ\x90áƒœáƒ£áƒšáƒ˜"
+        - generic [ref=e176]:
+          - img "Velvet booths against the jungle wallpaper" [ref=e177]
+          - generic [ref=e178]:
+            - link "áƒ™áƒ”áƒ áƒ«áƒ”áƒ‘áƒ˜" [ref=e179] [cursor=pointer]:
+              - /url: "#B"
+            - 'link "áƒ¡áƒáƒ¡áƒ›áƒ”áƒšáƒ”áƒ‘áƒ˜" [ref=e180] [cursor=pointer]':
+              - /url: "#B"
+            - link "áƒ“áƒ”áƒ¡áƒ”áƒ áƒ¢áƒ”áƒ‘áƒ˜" [ref=e181] [cursor=pointer]:
+              - /url: "#B"
+            - paragraph [ref=e182]: "áƒ¬áƒ\x9dáƒ—áƒœáƒ” áƒ“áƒ\x90áƒ“áƒ˜áƒ\x90áƒœáƒ˜áƒ¡ 12, áƒ—áƒ‘áƒ˜áƒšáƒ˜áƒ¡áƒ˜áƒ§áƒ\x9dáƒ•áƒ”áƒšáƒ“áƒ¦áƒ” 11:00â€“23:00598 33 70 20"
+      - generic [ref=e183]:
+        - generic [ref=e184]:
+          - generic [ref=e185]: Feels like
+          - text: Walking in. Cinematic, quiet, photography-led. The fastest to read.
+        - generic [ref=e186]:
+          - generic [ref=e187]: Trade-off
+          - text: It depends on good photos. Yours are 600â€“1200px wide, fine for phones, and sharper ones would make it sing.
+    - generic [ref=e188]:
+      - heading "C. The page is the object" [level=2] [ref=e189]
+      - paragraph [ref=e190]: The website is a printed menu card, set on the mint of your cabinets. Categories open like folded sections and the back of the card holds the address.
+      - generic [ref=e192]:
+        - generic [ref=e193]:
+          - 'img "Suro by day: plant shelves and the mint counter" [ref=e194]'
+          - group "Language" [ref=e195]:
+            - 'button "áƒ¥áƒ" [pressed] [ref=e196] [cursor=pointer]'
+            - button "EN" [ref=e197] [cursor=pointer]
+            - button "RU" [ref=e198] [cursor=pointer]
+        - generic [ref=e199]:
+          - generic [aria-hidden] [ref=e215]: "áƒ¡áƒ£áƒ áƒ\x9d"
+          - 'heading "áƒ™áƒáƒ¤áƒ”-áƒ‘áƒáƒ¦áƒ˜ áƒ’áƒ•áƒ˜áƒ›áƒ áƒ”áƒ‘áƒ˜áƒ¡ áƒ¥áƒ•áƒ”áƒ¨" [level=1] [ref=e216]'
+          - paragraph [ref=e217]: "áƒ§áƒ\x9dáƒ•áƒ”áƒšáƒ“áƒ¦áƒ” 11:00â€“23:00 Â· áƒ¬áƒ\x9dáƒ—áƒœáƒ” áƒ“áƒ\x90áƒ“áƒ˜áƒ\x90áƒœáƒ˜áƒ¡ 12"
+          - 'button "áƒ›áƒ”áƒœáƒ˜áƒ£áƒ¡ áƒœáƒáƒ®áƒ•áƒ" [ref=e218] [cursor=pointer]'
+          - generic [ref=e219]:
+            - link "áƒ™áƒ”áƒ áƒ«áƒ”áƒ‘áƒ˜" [ref=e220] [cursor=pointer]:
+              - /url: "#C"
+            - 'link "áƒ¡áƒáƒ¡áƒ›áƒ”áƒšáƒ”áƒ‘áƒ˜" [ref=e221] [cursor=pointer]':
+              - /url: "#C"
+            - link "áƒ“áƒ”áƒ¡áƒ”áƒ áƒ¢áƒ”áƒ‘áƒ˜" [ref=e222] [cursor=pointer]:
+              - /url: "#C"
+        - generic [ref=e223]:
+          - generic [ref=e224]: áƒ›áƒ”áƒœáƒ˜áƒ£
+          - generic [ref=e225]:
+            - group [ref=e226]:
+              - 'generic "áƒ¬áƒáƒ¡áƒáƒ®áƒ”áƒ›áƒ¡áƒ”áƒ‘áƒ”áƒšáƒ˜ +" [ref=e227] [cursor=pointer]'
+            - group [ref=e228]:
+              - generic "áƒ¡áƒ£áƒžáƒ”áƒ‘áƒ˜ +" [ref=e229] [cursor=pointer]
+            - group [ref=e230]:
+              - 'generic "áƒ¡áƒáƒšáƒáƒ—áƒ”áƒ‘áƒ˜ +" [ref=e231] [cursor=pointer]'
+            - group [ref=e232]:
+              - 'generic "áƒžáƒáƒ¡áƒ¢áƒ +" [ref=e233] [cursor=pointer]'
+            - group [ref=e234]:
+              - 'generic "áƒ«áƒ˜áƒ áƒ˜áƒ—áƒáƒ“áƒ˜ +" [ref=e235] [cursor=pointer]'
+            - group [ref=e236]:
+              - 'generic "áƒ¦áƒ£áƒ›áƒ”áƒšáƒ˜áƒ“áƒáƒœ +" [ref=e237] [cursor=pointer]'
+              - generic [ref=e238]:
+                - generic [ref=e239]:
+                  - 'heading "áƒ¡áƒ£áƒ áƒáƒ¡ áƒ®áƒáƒáƒáƒžáƒ£áƒ áƒ˜" [level=3] [ref=e240]'
+                  - generic [ref=e241]: 22â‚¾
+                  - generic [ref=e242]: "áƒ˜áƒ›áƒ”áƒ áƒ£áƒšáƒ˜ áƒ§áƒ•áƒ”áƒšáƒ˜ áƒ“áƒ\x90 áƒ¡áƒ£áƒšáƒ’áƒ£áƒœáƒ˜ áƒ©áƒ•áƒ”áƒœáƒ¡ áƒ¡áƒ\x90áƒ¤áƒ˜áƒ áƒ›áƒ\x9d áƒªáƒ\x9dáƒ›áƒ–áƒ” Â· áƒ¡áƒ\x90áƒ¤áƒ˜áƒ áƒ›áƒ\x9d Â· áƒ•áƒ”áƒ’áƒ”áƒ¢áƒ\x90áƒ áƒ˜áƒ\x90áƒœáƒ£áƒšáƒ˜"
+                - generic [ref=e243]:
+                  - 'heading "áƒ®áƒáƒáƒáƒžáƒ£áƒ áƒ˜ áƒ¢áƒ áƒ˜áƒ£áƒ¤áƒ”áƒšáƒ˜áƒ—" [level=3] [ref=e244]'
+                  - generic [ref=e245]: 32â‚¾
+                  - generic [ref=e246]: "áƒ˜áƒ›áƒ”áƒ áƒ£áƒšáƒ˜ áƒ§áƒ•áƒ”áƒšáƒ˜, áƒ¡áƒ£áƒšáƒ’áƒ£áƒœáƒ˜, áƒ¢áƒ áƒ˜áƒ£áƒ¤áƒ”áƒšáƒ˜áƒ¡ áƒžáƒ\x90áƒ¡áƒ¢áƒ\x90 Â· áƒ•áƒ”áƒ’áƒ”áƒ¢áƒ\x90áƒ áƒ˜áƒ\x90áƒœáƒ£áƒšáƒ˜"
+                - generic [ref=e247]:
+                  - 'heading "áƒ¡áƒ£áƒ áƒáƒ¡ áƒšáƒáƒ‘áƒ˜áƒáƒœáƒ˜" [level=3] [ref=e248]'
+                  - generic [ref=e249]: 16â‚¾
+                  - generic [ref=e250]: "áƒšáƒ\x9dáƒ‘áƒ˜áƒ\x9d áƒ“áƒ\x90 áƒ¯áƒ\x9dáƒœáƒ¯áƒ\x9dáƒšáƒ˜, áƒ›áƒ¬áƒœáƒ˜áƒšáƒ˜ áƒ¬áƒ˜áƒ¬áƒ\x90áƒ™áƒ˜áƒ— áƒ\x90áƒœ áƒ®áƒ\x90áƒšáƒ\x90áƒžáƒ”áƒœáƒ˜áƒ\x9dáƒ—áƒ˜ Â· áƒ¡áƒ\x90áƒ¤áƒ˜áƒ áƒ›áƒ\x9d Â· áƒ•áƒ”áƒ’áƒ\x90áƒœáƒ£áƒ áƒ˜"
+                - generic [ref=e251]:
+                  - 'heading "áƒšáƒáƒ‘áƒ˜áƒáƒœáƒ˜ áƒšáƒáƒ áƒ˜áƒ—" [level=3] [ref=e252]'
+                  - generic [ref=e253]: 19â‚¾
+                  - generic [ref=e254]: "áƒ¡áƒ\x90áƒ¤áƒ˜áƒ áƒ›áƒ\x9d áƒªáƒ\x9dáƒ›áƒ˜, áƒšáƒ\x9dáƒ‘áƒ˜áƒ\x9d, áƒšáƒ\x9dáƒ áƒ˜"
+                - generic [ref=e255]:
+                  - 'heading "áƒ›áƒáƒ áƒ’áƒáƒ áƒ˜áƒ¢áƒ" [level=3] [ref=e256]'
+                  - generic [ref=e257]: 21â‚¾
+                  - generic [ref=e258]: "áƒ›áƒ\x9dáƒªáƒ\x90áƒ áƒ”áƒšáƒ\x90, áƒžáƒ\x90áƒ áƒ›áƒ”áƒ–áƒ\x90áƒœáƒ˜ Â· áƒ•áƒ”áƒ’áƒ”áƒ¢áƒ\x90áƒ áƒ˜áƒ\x90áƒœáƒ£áƒšáƒ˜"
+                - generic [ref=e259]:
+                  - 'heading "áƒžáƒ”áƒžáƒ”áƒ áƒáƒœáƒ˜" [level=3] [ref=e260]'
+                  - generic [ref=e261]: 25â‚¾
+                  - generic [ref=e262]: "áƒ›áƒ\x9dáƒªáƒ\x90áƒ áƒ”áƒšáƒ\x90, áƒžáƒ”áƒžáƒ”áƒ áƒ\x9dáƒœáƒ˜, áƒžáƒ\x9dáƒ›áƒ˜áƒ“áƒ\x9dáƒ áƒ˜, áƒžáƒ\x90áƒ áƒ›áƒ”áƒ–áƒ\x90áƒœáƒ˜"
+                - generic [ref=e263]:
+                  - 'heading "áƒáƒ—áƒ®áƒ˜ áƒ§áƒ•áƒ”áƒšáƒ˜" [level=3] [ref=e264]'
+                  - generic [ref=e265]: 27â‚¾
+                  - generic [ref=e266]: "áƒžáƒ\x90áƒ áƒ›áƒ”áƒ–áƒ\x90áƒœáƒ˜, áƒ›áƒ\x9dáƒªáƒ\x90áƒ áƒ”áƒšáƒ\x90, áƒ’áƒ\x90áƒ£áƒ“áƒ\x90, áƒšáƒ£áƒ áƒ¯áƒ˜ áƒ§áƒ•áƒ”áƒšáƒ˜ Â· áƒ•áƒ”áƒ’áƒ”áƒ¢áƒ\x90áƒ áƒ˜áƒ\x90áƒœáƒ£áƒšáƒ˜"
+                - generic [ref=e267]:
+                  - heading "áƒ¤áƒ£áƒœáƒ’áƒ˜" [level=3] [ref=e268]
+                  - generic [ref=e269]: 24â‚¾
+                  - generic [ref=e270]: "áƒ›áƒ\x9dáƒªáƒ\x90áƒ áƒ”áƒšáƒ\x90, áƒžáƒ\x90áƒ áƒ›áƒ”áƒ–áƒ\x90áƒœáƒ˜, áƒ¡áƒ\x9dáƒ™áƒ\x9d, áƒ–áƒ”áƒ—áƒ˜áƒ¡áƒ®áƒ˜áƒšáƒ˜ Â· áƒ•áƒ”áƒ’áƒ”áƒ¢áƒ\x90áƒ áƒ˜áƒ\x90áƒœáƒ£áƒšáƒ˜"
+                - generic [ref=e271]:
+                  - 'heading "áƒ§áƒ•áƒ”áƒšáƒ˜áƒ¡ áƒ“áƒáƒ¤áƒ" [level=3] [ref=e272]'
+                  - generic [ref=e273]: 34â‚¾
+                  - generic [ref=e274]: "áƒ¡áƒ£áƒšáƒ’áƒ£áƒœáƒ˜, áƒ’áƒ\x90áƒ£áƒ“áƒ\x90, áƒšáƒ£áƒ áƒ¯áƒ˜ áƒ§áƒ•áƒ”áƒšáƒ˜, áƒ©áƒ”áƒ“áƒ\x90áƒ áƒ˜, áƒ—áƒ\x90áƒ¤áƒšáƒ˜, áƒ–áƒ”áƒ—áƒ˜áƒ¡áƒ®áƒ˜áƒšáƒ˜, áƒ®áƒ›áƒ”áƒšáƒ˜ áƒ®áƒ˜áƒšáƒ˜, áƒ—áƒ®áƒ˜áƒšáƒ˜ Â· áƒ•áƒ”áƒ’áƒ”áƒ¢áƒ\x90áƒ áƒ˜áƒ\x90áƒœáƒ£áƒšáƒ˜"
+            - group [ref=e275]:
+              - 'generic "áƒ§áƒáƒ•áƒ +" [ref=e276] [cursor=pointer]'
+            - group [ref=e277]:
+              - 'generic "áƒ©áƒáƒ˜ +" [ref=e278] [cursor=pointer]'
+            - group [ref=e279]:
+              - generic "áƒ›áƒ˜áƒšáƒ¥áƒ¨áƒ”áƒ˜áƒ¥áƒ˜ +" [ref=e280] [cursor=pointer]
+            - group [ref=e281]:
+              - 'generic "áƒ•áƒáƒ¤áƒšáƒ˜ +" [ref=e282] [cursor=pointer]'
+            - group [ref=e283]:
+              - generic "áƒ“áƒ”áƒ¡áƒ”áƒ áƒ¢áƒ˜ +" [ref=e284] [cursor=pointer]
+        - generic [ref=e285]:
+          - generic [ref=e286]: "áƒ¡áƒ£áƒ áƒ\x9d"
+          - generic [ref=e287]:
+            - term [ref=e288]: "áƒ›áƒ˜áƒ¡áƒ\x90áƒ›áƒ\x90áƒ áƒ—áƒ˜"
+            - definition [ref=e289]: "áƒ¬áƒ\x9dáƒ—áƒœáƒ” áƒ“áƒ\x90áƒ“áƒ˜áƒ\x90áƒœáƒ˜áƒ¡ 12, áƒ—áƒ‘áƒ˜áƒšáƒ˜áƒ¡áƒ˜"
+            - term [ref=e290]: "áƒ¡áƒ\x90áƒ\x90áƒ—áƒ”áƒ‘áƒ˜"
+            - definition [ref=e291]: "áƒ§áƒ\x9dáƒ•áƒ”áƒšáƒ“áƒ¦áƒ” 11:00â€“23:00"
+            - term [ref=e292]: "áƒ¢áƒ”áƒšáƒ”áƒ¤áƒ\x9dáƒœáƒ˜"
+            - definition [ref=e293]: 598 33 70 20
+      - generic [ref=e294]:
+        - generic [ref=e295]:
+          - generic [ref=e296]: Feels like
+          - text: Holding the cafÃ©'s own printed menu. Warm, tactile and very easy to use.
+        - generic [ref=e297]:
+          - generic [ref=e298]: Trade-off
+          - text: Less cinematic than A or B, and the plants play a smaller role.
+  - paragraph [ref=e299]: Tell me A, B or C, or a mix ("B's hero with C's menu"). The intro animation, hero motion and navigation each get their own versions in the next steps. Fonts are placeholders that cover Georgian and Cyrillic and will be tuned once a direction is chosen.
