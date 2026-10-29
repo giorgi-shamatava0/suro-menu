@@ -77,7 +77,7 @@ v2 (current, `app/(admin)/admin/Admin.tsx` + `admin.css`, dark like the menu):
 - Site: https://suro-menu.vercel.app (Vercel project `suro-menu`, team supervercel1, linked in `.vercel/`; `vercel.json` sets framework nextjs). No git integration: deploy with `vercel deploy --prod`.
 - Convex prod: `aromatic-curlew-123` (`NEXT_PUBLIC_CONVEX_URL` set on Vercel, Production). Convex code changes need `npx convex deploy -y` **before** the Vercel deploy.
 - Prod data = the starter menu from `seed:run` (sample prices, no photos, no allergens). The dev database keeps the test edits and the Wikimedia sample photos; they never went to prod.
-- `ADMIN_PASSWORD_HASH` on prod must be set by the owner (`npx convex env set --prod …`); until then /admin login fails on prod.
+- `ADMIN_PASSWORD_HASH` on prod = the same hash as dev (copied 2026-10-29), so /admin works on prod with the owner's password.
 
 ## Backlog (owner's feedback, 2026-10-27), fix in step order
 - [x] **Loader**: loader 1 accepted ("it's okay, move on", 2026-10-27). Logo colour still open (teal for now).
@@ -102,7 +102,7 @@ v2 (current, `app/(admin)/admin/Admin.tsx` + `admin.css`, dark like the menu):
 - **Photo test on prod (2026-10-28)**: the boss tests A and B at `suro-menu.vercel.app/ka?ph=a` / `?ph=b` (prod panel offers only A/B; C and Now are localhost only; no `?ph` = the old small photos). The 15 sample photos were copied over every non-compact dish (36) in **both prod and dev** databases (old Wikimedia photos removed); each dish has its own file. Not accurate per dish, samples only: replace with real photos via /admin before launch.
 - Deployed 2026-10-28 (language-switch fix, address, background options A–F behind `?bg=`; guests without `?bg` see the plain background as before).
 
-## Hardening pass (2026-10-29), on dev only, needs `npx convex deploy -y` then `vercel deploy --prod`
+## Hardening pass (2026-10-29), deployed to prod 2026-10-29
 - Login: each attempt is counted (`auth.attempt` mutation) *before* the slow hash check, so parallel guesses can't slip past the global lock; passwords over 200 chars are refused; expired sessions are cleaned up on login (`sessions.by_expiry`).
 - "Unpublished changes" comes from a one-row `draftState` table (`edited()` in admin.ts writes only when the flag flips) instead of re-reading the whole draft and all 5 versions after every keystroke. publish → off, publishVersion/restore → exact.
 - Editor: add/publish/version buttons ignore a second click while the first call runs (`useLock`); toggles/marks save 200ms after the last click (a burst = one save); closing the tab with an unsaved edit warns and saves; `remove` is a no-op on an already-deleted row; map link must be https.
