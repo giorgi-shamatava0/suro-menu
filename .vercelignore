@@ -1,0 +1,8 @@
+reference/
+assets/
+.taste-skill/
+.playwright/
+.playwright-cli/
+.claude/
+docs/
+scripts/

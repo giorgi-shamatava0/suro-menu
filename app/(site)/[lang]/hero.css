@@ -1,0 +1,145 @@
+/* Loader + hero. The loader is a curtain of plants that springs in from the edges and is pushed aside;
+   the hero is the chosen V2 greenhouse window. ?lab replays the loader and shows a small test panel. */
+:root { --logo: #5fbcac; --intro-end: 1.35s; --out: cubic-bezier(0.16, 1, 0.3, 1); }
+html.seen { --intro-end: 0s; }
+
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.logo {
+  display: block; margin: 0; width: var(--logo-w, min(64vw, 400px)); aspect-ratio: 2037 / 1437;
+  background: var(--logo);
+  -webkit-mask: url(/logo-mask.png) center / contain no-repeat; mask: url(/logo-mask.png) center / contain no-repeat;
+}
+
+/* ---------- language picker: current language, others in a popup ---------- */
+.lang { position: relative; }
+.lang summary {
+  list-style: none; cursor: pointer; min-width: 44px; height: 36px; padding: 0 12px; border-radius: 99px;
+  display: grid; place-items: center; font-size: 14px; letter-spacing: 0.02em; color: var(--ink);
+  background: rgba(15, 19, 17, 0.72); box-shadow: inset 0 0 0 1px var(--line); -webkit-tap-highlight-color: transparent;
+}
+.lang summary::-webkit-details-marker { display: none; }
+.lang-pop {
+  position: absolute; right: 0; top: calc(100% + 8px); z-index: 10; min-width: 160px; padding: 6px; border-radius: 14px;
+  background: var(--chip); box-shadow: 0 16px 40px -12px rgba(0, 0, 0, 0.8);
+  transform-origin: top right; animation: pop 0.22s var(--ease);
+}
+@keyframes pop { from { opacity: 0; scale: 0.94; } }
+.lang-pop a { display: flex; align-items: center; min-height: 44px; padding: 0 14px; border-radius: 10px; text-decoration: none; font-size: 16px; color: var(--soft); }
+.lang-pop a[aria-current] { color: var(--ink); background: rgba(239, 232, 219, 0.06); }
+.lang-pop a[aria-current]::after { content: ""; width: 7px; height: 7px; margin-left: auto; border-radius: 50%; background: var(--teal); }
+.hero-lang { position: absolute; z-index: 6; top: calc(14px + env(safe-area-inset-top, 0px)); right: var(--gut); }
+
+/* ---------- hero: a greenhouse window, plants on every edge, the name in the middle ---------- */
+.hero { position: relative; height: 100svh; min-height: 620px; overflow: hidden; isolation: isolate; }
+.hero::after { /* scrim so the words always sit on night */
+  content: ""; position: absolute; inset: auto 0 0; height: 55%; z-index: 2; pointer-events: none;
+  background: linear-gradient(to top, var(--night) 40%, rgba(15, 19, 17, 0));
+}
+.canopy { z-index: 3; top: -3vw; left: -20vw; width: 140vw; }
+.basket { z-index: 1; top: 8svh; left: -16vw; width: clamp(210px, 62vw, 420px); }
+.bulbs { z-index: 3; top: -2svh; right: 14vw; width: clamp(104px, 30vw, 170px); }
+.monstera { z-index: 1; right: -36vw; top: 34svh; width: clamp(250px, 68vw, 520px); rotate: -12deg; }
+.pothos { z-index: 2; right: -4vw; top: -6svh; width: clamp(90px, 30vw, 220px); }
+.frond { z-index: 1; left: -26vw; bottom: -12svh; width: clamp(240px, 70vw, 460px); rotate: 24deg; }
+
+.hero-copy {
+  position: absolute; z-index: 4; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: flex-end;
+  text-align: center; padding: 0 var(--gut) calc(44px + env(safe-area-inset-bottom, 0px));
+}
+.tagline { margin: 22px auto 0; font-size: 19px; line-height: 1.35; max-width: 26ch; text-wrap: balance; color: var(--ink); }
+.tagline small { display: block; margin-top: 6px; font-size: 15px; font-style: italic; color: var(--soft); }
+:lang(ka) .tagline { font-size: 17px; line-height: 1.5; }
+:lang(ka) .tagline small { font-style: normal; font-size: 14px; }
+.chapters { margin-bottom: 0; display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 26px; margin-top: 28px; }
+.chapters a, .chapters span {
+  font-size: 23px; min-height: 44px; display: inline-flex; align-items: center;
+  text-decoration: underline; text-decoration-color: rgba(95, 188, 172, 0.55); text-decoration-thickness: 1px; text-underline-offset: 7px;
+}
+:lang(ka) .chapters a, .chapters span { font-size: 19px; }
+
+/* entrances: as the curtain parts, each plant of the room slides the last bit into place at its own
+   depth (no zoom), then the name and the words rise */
+@keyframes drift { from { opacity: 0; translate: var(--fx, 0) var(--fy, 0); } }
+@keyframes rise { from { opacity: 0; translate: 0 16px; } }
+@keyframes sway { from { rotate: -1.4deg; } to { rotate: 1.4deg; } }
+.canopy   { --fx: 0; --fy: -7vh; }
+.pothos   { --fx: 2vw; --fy: -10vh; }
+.bulbs    { --fx: 0; --fy: -4vh; }
+.basket   { --fx: -9vw; --fy: -3vh; }
+.monstera { --fx: 12vw; --fy: 3vh; }
+.frond    { --fx: -12vw; --fy: 6vh; }
+.drift { animation: drift 1.6s var(--out) var(--intro-end) both; }
+.hero .sway { transform-origin: 50% 0; animation: drift 1.6s var(--out) var(--intro-end) both, sway 7s ease-in-out infinite alternate; }
+.hero .sway-slow { transform-origin: 50% 0; animation: drift 1.6s var(--out) var(--intro-end) both, sway 9s ease-in-out -3s infinite alternate; }
+.rise { animation: rise 1s var(--out) calc(var(--intro-end) + 0.5s + var(--d, 0) * 120ms) both; }
+
+/* ---------- loader ---------- */
+.intro { position: fixed; inset: 0; z-index: 100; overflow: hidden; pointer-events: none; background: var(--night);
+  animation: lift 0.7s ease 1.3s both; }
+@keyframes lift { to { background-color: rgba(15, 19, 17, 0); visibility: hidden; } }
+.seen .intro { display: none; }
+html.seen { --intro-end: 0s; }
+/* nothing moves until every picture is decoded (or 2.5s have passed) */
+html:not(.intro-go):not(.seen):has(.intro) :is(.intro, .intro *, .hero *) { animation-play-state: paused !important; }
+html:not(:has(.intro)) { --intro-end: 0s; }
+/* repeat visits: the whole hero appears at once, when its pictures are ready (see START in Hero.tsx) */
+.hero { transition: opacity 0.35s ease; }
+html.wait .hero { opacity: 0; }
+html.wait .hero * { animation-play-state: paused !important; }
+@media (prefers-reduced-motion: reduce) { .hero { transition: none; } }
+
+/* Each piece lives on one line through its own screen edge (--tx, --ty). It springs in along that line,
+   still settling when it is pushed back out; near pieces (--grow) travel further and swell as they pass you. */
+.intro img {
+  position: absolute; max-width: none; height: auto; will-change: translate, rotate, scale;
+  translate: -50% -50%; rotate: var(--r, 0deg); scale: var(--sx, 1) var(--sy, 1);
+  animation:
+    spring-in 1.35s var(--out) calc(var(--s, 0s) * 1.6) both,
+    part var(--t, 1s) cubic-bezier(0.55, 0, 0.25, 1) calc(1.05s + var(--s, 0s)) forwards;
+}
+@keyframes spring-in {
+  from { opacity: 0; translate: calc(-50% + var(--tx) * 0.5) calc(-50% + var(--ty) * 0.5); rotate: calc(var(--r, 0deg) + var(--dr) * 0.6); }
+  35% { opacity: 1; }
+}
+@keyframes part {
+  to {
+    translate: calc(-50% + var(--tx)) calc(-50% + var(--ty)); rotate: calc(var(--r, 0deg) + var(--dr));
+    scale: calc(var(--sx, 1) * var(--grow, 1)) calc(var(--sy, 1) * var(--grow, 1));
+  }
+}
+/* centre, size, way out; far pieces first in the list sit underneath */
+.c-top     { left: 50%;  top: 15%; width: calc(150vw + 34vh); --tx: 0vw; --ty: -80vh; --dr: 0deg; --t: 1.25s; --grow: 1.08; }
+.c-bottom  { left: 50%;  top: 97%; width: calc(170vw + 30vh); --sy: -1; --tx: 0vw; --ty: 60vh; --dr: 0deg; --t: 1.25s; --grow: 1.08; --s: 0.05s; }
+.c-tr      { left: 82%;  top: 10%; width: calc(12vw + 12vh); --tx: 6vw; --ty: -80vh; --dr: 6deg; --t: 1.2s; --grow: 1.1; --s: 0.03s; }
+.c-scatter { left: 86%;  top: 84%; width: calc(40vw + 16vh); --r: -20deg; --tx: 80vw; --ty: 45vh; --dr: 25deg; --t: 1.05s; --grow: 1.25; --s: 0.08s; }
+.c-bl      { left: 14%;  top: 84%; width: calc(52vw + 26vh); --tx: -80vw; --ty: 45vh; --dr: -25deg; --t: 0.95s; --grow: 1.35; --s: 0.06s; }
+.c-left    { left: 8%;   top: 38%; width: calc(52vw + 28vh); --r: 90deg; --tx: -95vw; --ty: -8vh; --dr: -35deg; --t: 0.9s; --grow: 1.4; --s: 0.02s; }
+.c-right   { left: 94%;  top: 52%; width: calc(52vw + 28vh); --sx: -1; --r: -45deg; --tx: 95vw; --ty: 4vh; --dr: 35deg; --t: 0.9s; --grow: 1.4; --s: 0.04s; }
+
+/* ---------- test panel (?lab) ---------- */
+.lab {
+  position: fixed; z-index: 120; left: 8px; top: calc(8px + env(safe-area-inset-top, 0px)); display: flex; flex-wrap: wrap; gap: 4px; max-width: 70vw; padding: 8px;
+  border-radius: 12px; background: #fff; color: #111; font: 12px/1 system-ui, sans-serif; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+}
+.lab a, .lab button { text-decoration: none; display: inline-flex; align-items: center; gap: 5px; min-height: 30px; padding: 0 9px; border: 1px solid #ccc; border-radius: 8px; background: #fff; color: #111; font: inherit; }
+.lab a[aria-current] { background: #111; color: #fff; border-color: #111; }
+.lab i { width: 10px; height: 10px; border-radius: 50%; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.3); }
+
+/* ---------- laptop and wider ---------- */
+@media (min-width: 900px) {
+  .hero { min-height: 640px; }
+  .canopy { left: 0; top: -5vw; width: 100vw; }
+  .basket { left: 2vw; top: 4svh; width: 360px; }
+  .bulbs { right: 33vw; width: 160px; }
+  .monstera { right: -6vw; top: auto; bottom: -14svh; width: 560px; }
+  .pothos { right: 4vw; top: -4svh; width: 200px; }
+  .frond { left: -6vw; bottom: -16svh; width: 460px; }
+  .hero-copy { padding-bottom: 9svh; }
+  .logo { --logo-w: min(34vw, 520px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .intro { display: none; }
+  :root { --intro-end: 0s; }
+  .drift, .rise, .hero .sway, .hero .sway-slow { animation: none !important; }
+}
