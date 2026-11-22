@@ -294,6 +294,7 @@ function Editor({ token, onLogout }: { token: string; onLogout: () => void }) {
           </div>
         )}
         <p className={`status${state === "error" ? " is-error" : versions?.changed && !done ? " is-changed" : ""}`} role="status">{status}</p>
+        <a className="ghost" href="/admin/loyalty">Loyalty</a>
         <button className="ghost" onClick={() => setDlg("versions")}>Versions</button>
         <a className="ghost" href="/" target="_blank" rel="noopener">View site</a>
         <button className="primary" disabled={!versions?.changed || state === "saving" || !!peek} onClick={() => publish()}>Publish</button>

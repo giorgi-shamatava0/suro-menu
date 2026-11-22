@@ -14,6 +14,7 @@ const ui = {
   close: ["დახურვა", "Close", "Закрыть"],
   top: ["ზემოთ", "Back to top", "Наверх"],
   soldOut: ["ამოიწურა", "Sold out", "Закончилось"],
+  loyalty: ["ჩემი ბარათი", "My card", "Моя карта"],
   visit: ["გვესტუმრეთ", "Visit us", "Ждём вас"],
   clear: ["გასუფთავება", "Clear", "Сбросить"],
   filters: ["ფილტრი", "Filter", "Фильтр"],

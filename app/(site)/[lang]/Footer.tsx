@@ -28,6 +28,7 @@ export default function Footer({ t, s }: Props) {
           {s.hours && <li>{clock}{s.hours}</li>}
           {tel && <li>{phone}<a href={tel}>{s.phone}</a></li>}
         </ul>
+        <p className="foot-note"><a href="/loyalty">{t.loyalty}</a></p>
         {note}
         {top}
       </div>

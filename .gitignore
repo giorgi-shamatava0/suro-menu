@@ -9,3 +9,6 @@ tsconfig.tsbuildinfo
 .playwright-cli/
 HANDOFF.md
 CLAUDE.md
+
+.impeccable/*
+!.impeccable/design.json
