@@ -7,3 +7,5 @@ assets/raw/
 .env*
 tsconfig.tsbuildinfo
 .playwright-cli/
+HANDOFF.md
+CLAUDE.md
