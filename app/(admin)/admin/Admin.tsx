@@ -9,10 +9,11 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode }
 import { api } from "@/convex/_generated/api";
 import type { Doc, Id } from "@/convex/_generated/dataModel";
 import { publishMenu } from "@/app/actions";
-import { Row } from "@/app/(site)/[lang]/Row";
+import { cropVars, Row } from "@/app/(site)/[lang]/Row";
+import Cropper, { onScreen } from "./Crop";
 import { plates, stems } from "@/lib/decor";
 import { dict, type Lang } from "@/lib/i18n";
-import { fromTree, localize } from "@/lib/localize";
+import { fromTree, localize, titleStyle } from "@/lib/localize";
 
 const client = new ConvexReactClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 const TOKEN_KEY = "suro-admin";
@@ -33,6 +34,9 @@ const LAYOUTS: [Display, string, ReactNode][] = [
   ["small", "Small", <svg key="s" viewBox="0 0 24 18" aria-hidden="true"><path d="M2 5h10M2 9h7M2 13h8" /><rect x="15" y="3" width="7" height="7" rx="1.5" /></svg>],
   ["big", "Big", <svg key="b" viewBox="0 0 24 18" aria-hidden="true"><rect x="2" y="1" width="20" height="10" rx="1.5" /><path d="M2 14h13M2 17h8" /></svg>],
 ];
+
+// section title sizes (undefined = Auto: as big as fits, like before)
+const TITLE_SIZES: [Doc<"sections">["titleSize"], string][] = [[undefined, "Auto"], ["s", "S"], ["m", "M"], ["l", "L"], ["xl", "XL"]];
 
 // the frames the guest menu crops photos to (site.css .item .photo)
 const FRAMES: Record<Display, string> = {
@@ -406,9 +410,11 @@ function SlotName({ token, track, slot, name }: { token: string; track: Track; s
 }
 
 /* Drag any row to a new place (on touch, by its ⋮⋮ grip). The row lifts off and follows the pointer,
-   the others slide aside, and the new order is saved on release. */
+   the others slide aside, and the new order is saved on release. A category can also be dropped on another
+   section in the left panel (moveTo): that section lights up and the category moves to its end, or, over an
+   open section's list, to the spot a line marks. */
 function useSort(commit: (ids: string[]) => void) {
-  const [drag, setDrag] = useState<{ list: string; id: string; ids: string[] } | null>(null);
+  const [drag, setDrag] = useState<{ list: string; id: string; ids: string[]; into?: string; at?: number } | null>(null);
   const before = useRef<{ box: HTMLElement; tops: Map<string, number> } | null>(null);
   const rows = (box: HTMLElement) => [...box.children].filter((el): el is HTMLElement => el instanceof HTMLElement && !!el.dataset.sid);
   // the rows that made room slide into place instead of jumping
@@ -424,7 +430,7 @@ function useSort(commit: (ids: string[]) => void) {
   const order = <X extends { id: string }>(list: string, xs: X[]) =>
     drag?.list === list ? drag.ids.map((id) => xs.find((x) => x.id === id)).filter((x): x is X => !!x) : xs;
 
-  function start(e: React.PointerEvent<HTMLElement>, list: string, id: string, ids: string[]) {
+  function start(e: React.PointerEvent<HTMLElement>, list: string, id: string, ids: string[], moveTo?: (sectionId: string, ids?: string[]) => void) {
     const tgt = e.target as HTMLElement;
     if (e.button !== 0 || tgt.closest("input, textarea, select, label, .ed-form, button:not(.grip)") || (e.pointerType !== "mouse" && !tgt.closest(".grip"))) return;
     e.stopPropagation();
@@ -433,7 +439,7 @@ function useSort(commit: (ids: string[]) => void) {
     const box = row.parentElement!;
     const scroller = box.closest<HTMLElement>(".scroll");
     const x0 = e.clientX, y0 = e.clientY;
-    let ghost: HTMLElement | null = null, ox = 0, oy = 0, cur = ids;
+    let ghost: HTMLElement | null = null, ox = 0, oy = 0, cur = ids, into: string | undefined, intoAt: number | undefined, there: string[] | undefined;
     const move = (ev: PointerEvent) => {
       if (!ghost) {
         if (Math.hypot(ev.clientX - x0, ev.clientY - y0) < 5) return;
@@ -455,6 +461,24 @@ function useSort(commit: (ids: string[]) => void) {
         if (ev.clientY < r.top + 60) scroller.scrollBy(0, -12);
         else if (ev.clientY > r.bottom - 60) scroller.scrollBy(0, 12);
       }
+      if (moveTo) {
+        const el = document.elementFromPoint(ev.clientX, ev.clientY);
+        const over = el?.closest<HTMLElement>(".side-sec")?.dataset.sid;
+        const next = over && over !== list ? over : undefined;
+        // over an open section's list: the drop spot is between the rows the pointer is between
+        const ul = next ? el!.closest<HTMLElement>(".side-cats") : null;
+        const them = ul ? rows(ul).map((r) => r.dataset.sid!) : [];
+        let spot = ul && them.length ? rows(ul).findIndex((r) => { const b = r.getBoundingClientRect(); return ev.clientY < b.top + b.height / 2; }) : undefined;
+        if (spot === -1) spot = them.length;
+        there = spot === undefined ? undefined : [...them.slice(0, spot), id, ...them.slice(spot)];
+        if (next !== into || spot !== intoAt) {
+          into = next;
+          intoAt = spot;
+          if (into) cur = ids; // over another section the list goes back to how it was
+          setDrag({ list, id, ids: cur, into, at: intoAt });
+        }
+        if (into) return;
+      }
       const rest = rows(box).filter((el) => el.dataset.sid !== id);
       let at = rest.findIndex((el) => { const b = el.getBoundingClientRect(); return ev.clientY < b.top + b.height / 2; });
       if (at < 0) at = rest.length;
@@ -475,7 +499,8 @@ function useSort(commit: (ids: string[]) => void) {
       const swallow = (ev: Event) => { ev.stopPropagation(); ev.preventDefault(); };
       addEventListener("click", swallow, { capture: true, once: true });
       setTimeout(() => removeEventListener("click", swallow, { capture: true }), 0);
-      if (cur.join() !== ids.join()) commit(cur);
+      if (into) moveTo!(into, there);
+      else if (cur.join() !== ids.join()) commit(cur);
       setDrag(null);
     };
     addEventListener("pointermove", move);
@@ -503,12 +528,13 @@ function Hit({ on, onOpen, children }: { on: boolean; onOpen: () => void; childr
    Right: the open section drawn as guests see it; click a dish or category title to edit it. */
 function MenuView({ token, tree, track, lang, readOnly }: { token: string; tree: Tree; track: Track; lang: Lang; readOnly?: boolean }) {
   const [secId, setSecId] = useState<string | null>(null);
+  const [unfolded, setUnfolded] = useState<string[]>([]); // sections whose categories show in the left panel
   const [renaming, setRenaming] = useState<string | null>(null);
   const [panel, setPanel] = useState<Panel>(null);
   const [fresh, setFresh] = useState<string | null>(null);
   const [live, setLive] = useState<{ id: string; data: object } | null>(null);
   const saveSection = useMutation(api.admin.saveSection);
-  const saveCategory = useMutation(api.admin.saveCategory);
+  const saveCategory = useMutation(api.admin.saveCategory).withOptimisticUpdate(optimistic("categories"));
   const saveItem = useMutation(api.admin.saveItem);
   const reorder = useMutation(api.admin.reorder).withOptimisticUpdate(reordered);
   const sort = useSort((ids) => track(reorder({ token, ids: ids as Id<"items">[] })));
@@ -539,8 +565,14 @@ function MenuView({ token, tree, track, lang, readOnly }: { token: string; tree:
     return () => removeEventListener("keydown", esc);
   }, [panel]);
   const reveal = (id: string) => setTimeout(() => document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "center" }), 80);
+  const isUnfolded = (id: string) => unfolded.includes(id) || (secId === null && id === sec?.id);
+  // a section opens on the right and unfolds on the left; the others stay unfolded, so a category can be dragged to an exact spot in one.
+  // Clicking the section already on the right folds or unfolds it.
   function openSection(id: string) {
     open(null);
+    const shown = isUnfolded(id);
+    setUnfolded((xs) => (id === sec?.id && shown ? xs.filter((x) => x !== id) : xs.includes(id) ? xs : [...xs, id]));
+    if (id === sec?.id) return setSecId(id);
     setSecId(id);
     canvas.current?.scrollTo({ top: 0 });
   }
@@ -583,6 +615,15 @@ function MenuView({ token, tree, track, lang, readOnly }: { token: string; tree:
     return cats.length ? `${count(cats.length, "category", "categories")} and ${count(dishes, "dish", "dishes")}` : "";
   };
   const start: typeof sort.start = (...a) => { if (!readOnly) sort.start(...a); };
+  // a category dropped on another section moves to its end, dishes and all; an open form for it closes so it can't save the old section back
+  const moveCat = (id: string) => (sectionId: string, ids?: string[]) => {
+    const c = tree.categories.find((x) => x._id === id);
+    if (!c) return;
+    if (panel?.id === id) open(null);
+    track(saveCategory({ token, id: c._id, data: { ...strip(c), sectionId: sectionId as Id<"sections"> } }));
+    // mutations from one client run in order, so this lands after the move
+    if (ids) track(reorder({ token, ids: ids as Id<"items">[] }));
+  };
   const dragging = (id: string) => (sort.drag?.id === id ? " ed-drag" : "");
   const sectionIds = menu.sections.map((s) => s.id);
   const plate = sec?.decor && plates[sec.decor as keyof typeof plates];
@@ -594,8 +635,9 @@ function MenuView({ token, tree, track, lang, readOnly }: { token: string; tree:
           {sort.order("sections", menu.sections).map((s) => {
             const isOpen = s.id === sec?.id;
             const catIds = s.cats.map((c) => c.id);
+            const at = sort.drag?.into === s.id ? sort.drag.at : undefined;
             return (
-              <li key={s.id} data-sid={s.id} className={`side-sec${isOpen ? " open" : ""}${dragging(s.id)}`}>
+              <li key={s.id} data-sid={s.id} className={`side-sec${isOpen ? " open" : ""}${dragging(s.id)}${sort.drag?.into === s.id ? " drop-into" : ""}`}>
                 {renaming === s.id ? (
                   <SectionForm key={s.id} token={token} sec={tree.sections.find((x) => x._id === s.id)!} holds={holds(s.id)} track={track} onDraft={draftOf(s.id)} fresh={fresh === s.id}
                     onClose={() => { setRenaming(null); setLive(null); }} />
@@ -606,12 +648,12 @@ function MenuView({ token, tree, track, lang, readOnly }: { token: string; tree:
                     {isOpen && <button className="side-edit" onClick={(e) => { e.stopPropagation(); setRenaming(s.id); }}>Edit</button>}
                   </div>
                 )}
-                {isOpen && (
+                {isUnfolded(s.id) && (
                   <>
                     <ul className="side-cats" data-sort={s.id}>
-                      {sort.order(s.id, s.cats).map((c) => (
-                        <li key={c.id} data-sid={c.id} className={`${panel?.id === c.id ? "on" : ""}${dragging(c.id)}`}>
-                          <div className="side-row" onPointerDown={(e) => start(e, s.id, c.id, catIds)}
+                      {sort.order(s.id, s.cats).map((c, ci) => (
+                        <li key={c.id} data-sid={c.id} className={`${panel?.id === c.id ? "on" : ""}${dragging(c.id)}${at === ci ? " drop-at" : ""}${at === s.cats.length && ci === at - 1 ? " drop-end" : ""}`}>
+                          <div className="side-row" onPointerDown={(e) => start(e, s.id, c.id, catIds, moveCat(c.id))}
                             onClick={() => { open({ kind: "category", id: c.id as Id<"categories"> }); reveal(`c-${c.id}`); }}>
                             <Grip />
                             <span className="side-name">{c.name}</span>
@@ -636,14 +678,14 @@ function MenuView({ token, tree, track, lang, readOnly }: { token: string; tree:
             <section className="sec">
               <div className="sec-head wrap" data-stem={plate ? stems[sec.decor as keyof typeof plates] : undefined}>
                 {plate && <Image className="deco plate" src={plate} alt="" sizes="420px" />}
-                <h2>{sec.name}</h2>
+                <h2 style={titleStyle(sec.name, sec.titleSize)}>{sec.name}</h2>
               </div>
               <div data-sort={sec.id}>
                 {sort.order(sec.id, sec.cats).map((c) => {
                   const itemIds = c.items.map((i) => i.id);
                   return (
                     <section key={c.id} id={`c-${c.id}`} data-sid={c.id} className={`cat wrap${c.compact ? " compact" : ""}${dragging(c.id)}`}>
-                      <div className="ed-box" onPointerDown={(e) => start(e, sec.id, c.id, sec.cats.map((x) => x.id))}>
+                      <div className="ed-box" onPointerDown={(e) => start(e, sec.id, c.id, sec.cats.map((x) => x.id), moveCat(c.id))}>
                         <Hit on={panel?.id === c.id} onOpen={() => open({ kind: "category", id: c.id as Id<"categories"> })}>
                           <header className="cat-head">
                             <h3>{c.name}{c.compact && <span className="ed-mark">Short list</span>}</h3>
@@ -807,6 +849,7 @@ function ItemForm({ token, item, compact, track, onDraft, fresh, onClose }: { to
   const [d, change] = useDraft(strip(item), ({ photoUrl, ...data }) => (filled(data.name) ? track(saveItem({ token, id: item._id, data: clean(data) })) : undefined), onDraft);
   const [upErr, setUpErr] = useState("");
   const [busy, setBusy] = useState(false);
+  const [cropping, setCropping] = useState(false);
   const [priceText, setPriceText] = useState(d.price?.toString() ?? "");
   const ref = useRef<HTMLDivElement>(null);
   useFresh(fresh, ref);
@@ -821,7 +864,8 @@ function ItemForm({ token, item, compact, track, onDraft, fresh, onClose }: { to
       const r = await fetch(await uploadUrl({ token }), { method: "POST", headers: { "Content-Type": "image/webp" }, body: blob });
       if (!r.ok) throw new Error();
       const { storageId } = await r.json();
-      change({ photo: storageId, photoUrl: URL.createObjectURL(blob), display: d.display === "none" ? undefined : d.display }, true);
+      change({ photo: storageId, photoUrl: URL.createObjectURL(blob), crop: undefined, display: d.display === "none" ? undefined : d.display }, true);
+      setCropping(true);
     } catch {
       setUpErr("The photo could not be uploaded. Try another file.");
     } finally {
@@ -857,13 +901,9 @@ function ItemForm({ token, item, compact, track, onDraft, fresh, onClose }: { to
             <h3>Photo</h3>
             {d.photoUrl ? (
               <>
-                <img className="preview" data-size={d.display ?? "small"} src={d.photoUrl} alt="" />
+                <span className="preview crop" data-size={d.display ?? "small"} style={cropVars(d.crop)}><img src={onScreen(d.photoUrl) ?? d.photoUrl} alt="" /></span>
                 <div className="photo-btns">
-                  <label className="secondary file">
-                    {busy ? "Uploading…" : "Replace"}
-                    <input type="file" accept="image/*" onChange={(e) => upload(e.target.files?.[0])} disabled={busy} />
-                  </label>
-                  <button className="ghost" onClick={async () => (await ask({ title: "Remove this photo?", body: "The dish shows without a photo until you add one again.", yes: "Remove photo", danger: true })) && change({ photo: undefined, photoUrl: null }, true)}>Remove</button>
+                  <button className="secondary" onClick={() => setCropping(true)}>Edit</button>
                 </div>
                 <div className="seg sizes" role="radiogroup" aria-label="Photo size on the menu">
                   {LAYOUTS.map(([k, l, icon]) => (
@@ -871,6 +911,9 @@ function ItemForm({ token, item, compact, track, onDraft, fresh, onClose }: { to
                   ))}
                 </div>
                 <p className="hint">{FRAMES[d.display ?? "small"]}</p>
+                {cropping && <Cropper key={d.photoUrl} src={d.photoUrl} big={d.display === "big"} crop={d.crop} busy={busy} onReplace={upload}
+                  onRemove={async () => { if (await ask({ title: "Remove this photo?", body: "The dish shows without a photo until you add one again.", yes: "Remove photo", danger: true })) { change({ photo: undefined, photoUrl: null, crop: undefined }, true); setCropping(false); } }}
+                  onCancel={() => setCropping(false)} onDone={(crop) => { change({ crop }, true); setCropping(false); }} />}
               </>
             ) : (
               <label className="drop file">
@@ -937,6 +980,10 @@ function CategoryForm({ token, cat, sizes, track, onDraft, fresh, onClose }: { t
 
 function SectionForm({ token, sec, holds, track, onDraft, fresh, onClose }: { token: string; sec: Doc<"sections">; holds: string; track: Track; onDraft: OnDraft; fresh: boolean; onClose: () => void }) {
   const save = useMutation(api.admin.saveSection).withOptimisticUpdate(optimistic("sections"));
+  const setAll = useMutation(api.admin.setTitleSize).withOptimisticUpdate((store, { token, titleSize }) => {
+    const t = store.getQuery(api.admin.tree, { token });
+    if (t) store.setQuery(api.admin.tree, { token }, { ...t, sections: t.sections.map((s) => ({ ...s, titleSize })) });
+  });
   const remove = useMutation(api.admin.remove);
   const [d, change] = useDraft(strip(sec), (data) => (filled(data.name) ? track(save({ token, id: sec._id, data: clean(data) })) : undefined), onDraft);
   const ref = useRef<HTMLDivElement>(null);
@@ -949,6 +996,15 @@ function SectionForm({ token, sec, holds, track, onDraft, fresh, onClose }: { to
   return (
     <div className="ed-form side-form-sec" ref={ref} onKeyDown={(e) => e.key === "Enter" && onClose()}>
       <Langs name={d.name} onName={(name) => change({ name })} tabs={false} />
+      <div className="grp">
+        <h3>Title size</h3>
+        <div className="seg sizes" role="radiogroup" aria-label="Size of this section's title on the menu">
+          {TITLE_SIZES.map(([k, l]) => (
+            <button key={l} role="radio" aria-checked={d.titleSize === k} aria-pressed={d.titleSize === k} onClick={() => change({ titleSize: k }, true)}>{l}</button>
+          ))}
+        </div>
+        <button className="side-all" onClick={() => track(setAll({ token, titleSize: d.titleSize }))}>Use this size for all sections</button>
+      </div>
       <FormFoot what="section" onDelete={del} onDone={onClose} />
     </div>
   );

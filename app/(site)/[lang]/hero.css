@@ -50,12 +50,12 @@ html.seen { --intro-end: 0s; }
 .tagline small { display: block; margin-top: 6px; font-size: 15px; font-style: italic; color: var(--soft); }
 :lang(ka) .tagline { font-size: 17px; line-height: 1.5; }
 :lang(ka) .tagline small { font-style: normal; font-size: 14px; }
-.chapters { margin-bottom: 0; display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 26px; margin-top: 28px; }
-.chapters a, .chapters span {
-  font-size: 23px; min-height: 44px; display: inline-flex; align-items: center;
-  text-decoration: underline; text-decoration-color: rgba(95, 188, 172, 0.55); text-decoration-thickness: 1px; text-underline-offset: 7px;
+/* one quiet way into the menu; the bar and the 🔍 sheet list every section */
+.to-menu {
+  display: inline-flex; align-items: center; gap: 8px; min-height: 44px; margin-top: 30px; padding: 0 20px; border-radius: 99px;
+  font-size: 18px; text-decoration: none; color: var(--ink); box-shadow: inset 0 0 0 1px rgba(95, 188, 172, 0.5);
 }
-:lang(ka) .chapters a, .chapters span { font-size: 19px; }
+.to-menu svg { color: var(--teal); }
 
 /* entrances: as the curtain parts, each plant of the room slides the last bit into place at its own
    depth (no zoom), then the name and the words rise */
@@ -143,3 +143,4 @@ html.wait .hero * { animation-play-state: paused !important; }
   :root { --intro-end: 0s; }
   .drift, .rise, .hero .sway, .hero .sway-slow { animation: none !important; }
 }
+

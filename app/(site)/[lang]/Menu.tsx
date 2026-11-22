@@ -6,8 +6,9 @@ import { hero, plates, stems } from "@/lib/decor";
 import { type Lang, type UiKey } from "@/lib/i18n";
 import Footer from "./Footer";
 import Hero, { LangPicker } from "./Hero";
-import { Icon, Price, Row, tagIcon } from "./Row";
+import { Icon, Price, Row, tagIcon, zoomSizes } from "./Row";
 import type { LocalMenu, MenuItem } from "@/lib/menu";
+import { titleStyle } from "@/lib/localize";
 
 type T = Record<UiKey, string>;
 type Props = { lang: Lang; t: T; menu: LocalMenu };
@@ -23,7 +24,9 @@ export default function Menu({ lang, t, menu }: Props) {
   const [query, setQuery] = useState("");
   const [inMenu, setInMenu] = useState(false);
   const [hidden, setHidden] = useState(false);
+  const [zoom, setZoom] = useState<MenuItem | null>(null);
   const indexRef = useRef<HTMLDialogElement>(null);
+  const zoomRef = useRef<HTMLDialogElement>(null);
   const chipsRef = useRef<HTMLDivElement>(null);
   const heroRef = useRef<HTMLElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
@@ -67,7 +70,7 @@ export default function Menu({ lang, t, menu }: Props) {
 
   // Dialogs push a history entry so the phone's back button closes them.
   useEffect(() => {
-    const onPop = () => { if (indexRef.current?.open) close(indexRef.current, true); };
+    const onPop = () => { for (const d of [indexRef.current, zoomRef.current]) if (d?.open) close(d, true); };
     addEventListener("popstate", onPop);
     return () => removeEventListener("popstate", onPop);
   }, []);
@@ -138,7 +141,7 @@ export default function Menu({ lang, t, menu }: Props) {
               <div className="sec-head wrap" data-stem={plate ? stems[sec.decor as keyof typeof plates] : undefined}>
                 {plate && <Image className="deco plate" src={plate} alt="" sizes="(min-width: 900px) 420px, 62vw" />}
                 <p className="sec-num">{String(si + 1).padStart(2, "0")} <span>/ {String(sections.length).padStart(2, "0")}</span></p>
-                <h2 id={`h-${sec.id}`}>{sec.name}</h2>
+                <h2 id={`h-${sec.id}`} style={titleStyle(sec.name, sec.titleSize)}>{sec.name}</h2>
                 <ul className="sec-toc">
                   {cats.map((c) => <li key={c.id}><a href={`#c-${c.id}`}>{c.name}</a></li>)}
                 </ul>
@@ -153,7 +156,7 @@ export default function Menu({ lang, t, menu }: Props) {
                     </header>
                     {c.note && <p className="cat-note">{c.note}</p>}
                     <ul className="items">
-                      {items.map((it) => <li key={it.id} id={`i-${it.id}`}><Row it={it} compact={c.compact} t={t} /></li>)}
+                      {items.map((it) => <li key={it.id} id={`i-${it.id}`}><Row it={it} compact={c.compact} t={t} onOpen={() => { setZoom(it); show(zoomRef.current!); }} /></li>)}
                     </ul>
                   </section>
                 );
@@ -220,6 +223,20 @@ export default function Menu({ lang, t, menu }: Props) {
         </div>
       </dialog>
 
+      <dialog className="zoom" id="zoom" ref={zoomRef} aria-label={zoom?.name} onCancel={(e) => { e.preventDefault(); close(e.currentTarget); }}
+        onClick={(e) => e.target === e.currentTarget && close(e.currentTarget)}>
+        {zoom?.photo && (
+          <div className="zoom-card">
+            {/* keyed: a new dish gets new img elements, so the last dish's photo never lingers while this one loads */}
+            <div className="zoom-photo" key={zoom.photo}>
+              <Image className="zoom-fill" src={zoom.photo} alt="" width={8} height={6} />
+              <Image className="zoom-whole" src={zoom.photo} alt="" fill sizes={zoomSizes(640, 100)} />
+            </div>
+            <button type="button" className="icon-btn" onClick={() => close(zoomRef.current!)} aria-label={t.close}>{Icon.close}</button>
+            <Row it={{ ...zoom, photo: null }} compact={false} t={t} />
+          </div>
+        )}
+      </dialog>
     </>
   );
 }

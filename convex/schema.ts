@@ -7,6 +7,7 @@ export const tr = v.object({ ka: v.optional(v.string()), en: v.optional(v.string
 export const sectionFields = {
   name: tr,
   decor: v.optional(v.string()), // botanical plate key, see lib/decor.ts
+  titleSize: v.optional(v.union(v.literal("s"), v.literal("m"), v.literal("l"), v.literal("xl"))), // unset = Auto, see TITLE_SCALE in lib/localize.ts
   order: v.number(),
 };
 
@@ -31,6 +32,7 @@ export const itemFields = {
   tags: v.optional(v.array(v.string())),
   photo: v.optional(v.id("_storage")),
   display: v.optional(v.union(v.literal("none"), v.literal("small"), v.literal("big"))), // how the photo shows; unset = small
+  crop: v.optional(v.object({ x: v.number(), y: v.number(), z: v.number() })), // which part shows: position in %, zoom 1-3; unset = centred
   soldOut: v.optional(v.boolean()),
   hidden: v.optional(v.boolean()),
   order: v.number(),

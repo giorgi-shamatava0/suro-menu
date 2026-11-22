@@ -33,6 +33,7 @@ export default function Footer({ t, s }: Props) {
       </div>
       <Image className="deco foot-left" src={plates["fern-frond"]} alt="" sizes="70vw" />
       <Image className="deco foot-right" src={plates["monstera-b"]} alt="" sizes="70vw" />
+      <p className="credit">Developed by <a href="mailto:smuradashvili@gmail.com">Sandro Muradashvili</a></p>
     </footer>
   );
 }

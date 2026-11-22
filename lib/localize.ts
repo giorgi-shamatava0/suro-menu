@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 import type { FunctionReturnType } from "convex/server";
 import type { api } from "@/convex/_generated/api";
 import { pick, type Lang } from "./i18n";
@@ -19,6 +20,7 @@ export function localize({ sections, settings: s }: Raw, lang: Lang) {
       id: sec._id as string,
       name: p(sec.name),
       decor: sec.decor,
+      titleSize: sec.titleSize,
       cats: sec.categories.map((c) => ({
         id: c._id as string,
         name: p(c.name),
@@ -33,6 +35,7 @@ export function localize({ sections, settings: s }: Raw, lang: Lang) {
           tags: i.tags ?? [],
           photo: i.display === "none" ? null : i.photoUrl,
           big: i.display === "big",
+          crop: i.crop,
           soldOut: !!i.soldOut,
           hidden: !!(i as Flag).hidden,
         })),
@@ -47,7 +50,7 @@ export function fromTree(t: Tree): Raw {
   return {
     settings,
     sections: t.sections.map((s) => ({
-      _id: s._id, name: s.name, decor: s.decor,
+      _id: s._id, name: s.name, decor: s.decor, titleSize: s.titleSize,
       categories: t.categories.filter((c) => c.sectionId === s._id).map((c) => ({
         _id: c._id, name: c.name, note: c.note, compact: c.compact, hidden: c.hidden,
         items: t.items.filter((i) => i.categoryId === c._id).map(({ _creationTime, categoryId, order, photo, ...i }) => i),
@@ -55,6 +58,11 @@ export function fromTree(t: Tree): Raw {
     })),
   } as Raw;
 }
+
+// Section title size: a share of the full size; the title still shrinks so its longest word fits the screen (site.css .sec h2).
+export const TITLE_SCALE = { s: 0.5, m: 0.7, l: 0.85, xl: 1.2 } as const;
+export const titleStyle = (name: string, size?: keyof typeof TITLE_SCALE) =>
+  ({ "--w": Math.max(...name.split(/\s+/).map((w) => w.length)), "--s": size ? TITLE_SCALE[size] : 1 }) as CSSProperties;
 
 export type LocalMenu = ReturnType<typeof localize>;
 export type MenuItem = LocalMenu["sections"][number]["cats"][number]["items"][number];

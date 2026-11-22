@@ -142,9 +142,7 @@ export default function Hero({ lang, name, menuLabel, tagline, subline, sections
         <div className="hero-copy">
           <h1 className="logo rise"><span className="sr">{name}</span></h1>
           {tagline && <p className="tagline rise" style={d(1)}>{tagline}{subline && <small>{subline}</small>}</p>}
-          <nav className="chapters rise" style={d(2)} aria-label={menuLabel}>
-            {sections.map((sec) => <a key={sec.id} href={`#s-${sec.id}`}>{sec.name}</a>)}
-          </nav>
+          {sections[0] && <a className="to-menu rise" style={d(2)} href={`#s-${sections[0].id}`}>{menuLabel}<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M6 13l6 6 6-6" /></svg></a>}
         </div>
       </header>
 

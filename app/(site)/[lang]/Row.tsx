@@ -1,8 +1,12 @@
+import type { CSSProperties } from "react";
 import Image from "next/image";
 import type { UiKey } from "@/lib/i18n";
 import type { MenuItem } from "@/lib/menu";
 
 type T = Record<UiKey, string>;
+export type Crop = NonNullable<MenuItem["crop"]>;
+// feeds .crop in site.css
+export const cropVars = (c?: Crop) => (c ? ({ "--x": `${c.x}%`, "--y": `${c.y}%`, "--z": c.z } as CSSProperties) : undefined);
 const fmt = (n: number) => (Number.isInteger(n) ? String(n) : n.toFixed(2));
 
 export function Price({ it }: { it: MenuItem }) {
@@ -20,6 +24,9 @@ export const Icon = {
 };
 export const tagIcon = (k: string) => (k === "vegan" || k === "vegetarian" ? Icon.leaf : k === "spicy" ? Icon.chili : k === "signature" ? Icon.star : Icon.dot);
 
+// A zoomed-in picture needs that many more pixels to stay sharp.
+export const zoomSizes = (px: number, vw: number, z = 1) => (vw ? `(min-width: 700px) ${Math.round(px * z)}px, ${Math.round(vw * z)}vw` : `${Math.round(px * z)}px`);
+
 function Tags({ it, t }: { it: MenuItem; t: T }) {
   if (!it.tags.length) return null;
   return (
@@ -31,14 +38,17 @@ function Tags({ it, t }: { it: MenuItem; t: T }) {
   );
 }
 
-// One dish as guests see it; the admin canvas draws the same row. There is no popup.
-export function Row({ it, compact, t }: { it: MenuItem; compact: boolean; t: T }) {
+// One dish as guests see it; the admin canvas draws the same row. onOpen makes a dish with a photo clickable.
+export function Row({ it, compact, t, onOpen }: { it: MenuItem; compact: boolean; t: T; onOpen?: () => void }) {
   const photo = !compact && it.photo;
+  const Tag = photo && onOpen ? "button" : "div";
   return (
-    <div className={`item${photo ? " has-photo" : ""}${photo && it.big ? " big" : ""}${it.soldOut ? " is-sold" : ""}${it.hidden ? " is-hidden" : ""}`}>
+    <Tag {...(Tag === "button" && { type: "button" as const, onClick: onOpen })} className={`item${photo ? " has-photo" : ""}${photo && it.big ? " big" : ""}${it.soldOut ? " is-sold" : ""}${it.hidden ? " is-hidden" : ""}`}>
       {photo && (
-        <Image className="photo" src={photo} alt="" width={it.big ? 1200 : 480} height={it.big ? 900 : 480} loading="lazy"
-          sizes={it.big ? "(min-width: 700px) 640px, 92vw" : "160px"} />
+        <span className="photo crop" style={cropVars(it.crop)}>
+          <Image src={photo} alt="" width={it.big ? 1200 : 480} height={it.big ? 900 : 480} loading="lazy"
+            sizes={zoomSizes(it.big ? 640 : 160, it.big ? 92 : 0, it.crop?.z)} />
+        </span>
       )}
       <span className="text">
         <span className="head">
@@ -49,6 +59,6 @@ export function Row({ it, compact, t }: { it: MenuItem; compact: boolean; t: T }
         {it.desc && !compact && <span className="desc">{it.desc}</span>}
         {!compact && <Tags it={it} t={t} />}
       </span>
-    </div>
+    </Tag>
   );
 }

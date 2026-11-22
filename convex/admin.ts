@@ -134,6 +134,17 @@ export const setDisplay = mutation({
   },
 });
 
+// "Use this size for all" in the section box
+export const setTitleSize = mutation({
+  args: { token, titleSize: sectionFields.titleSize },
+  handler: async (ctx, { token, titleSize }) => {
+    await requireAdmin(ctx, token);
+    await edited(ctx);
+    const sections = await ctx.db.query("sections").collect();
+    await Promise.all(sections.filter((s) => s.titleSize !== titleSize).map((s) => ctx.db.patch(s._id, { titleSize })));
+  },
+});
+
 export const uploadUrl = mutation({
   args: { token },
   handler: async (ctx, { token }) => {

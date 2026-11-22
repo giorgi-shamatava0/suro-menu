@@ -85,6 +85,8 @@ input::placeholder { color: var(--faint); }
 .side-edit:hover { color: var(--text); background: var(--control); }
 .side-add { display: block; width: 100%; border: 0; background: none; color: var(--muted); text-align: left; padding: 8px 10px 8px 30px; border-radius: var(--rc); font-weight: 500; }
 .side-add:hover { color: var(--accent); background: var(--raised); }
+.side-all { justify-self: start; border: 0; background: none; color: var(--muted); padding: 4px 0; font-weight: 500; }
+.side-all:hover { color: var(--accent); }
 .side-sec .side-add { padding-left: 44px; margin-bottom: 8px; }
 .side-add-sec { padding-left: 30px; margin-top: 6px; }
 .side .ed-form { margin: 4px 0 8px; }
@@ -100,6 +102,11 @@ input::placeholder { color: var(--faint); }
 }
 .ed-drag { border-radius: 12px; box-shadow: inset 0 0 0 1.5px rgba(95, 188, 172, 0.55); background: rgba(95, 188, 172, 0.05); }
 .ed-drag > * { opacity: 0; }
+.side-sec.drop-into > .side-row { background: var(--active); color: var(--accent); box-shadow: inset 0 0 0 1.5px rgba(95, 188, 172, 0.55); }
+.side-cats li { position: relative; }
+.side-cats li.drop-at::before, .side-cats li.drop-end::after { content: ""; position: absolute; left: 4px; right: 4px; height: 2px; border-radius: 2px; background: var(--accent); }
+.side-cats li.drop-at::before { top: -2px; }
+.side-cats li.drop-end::after { bottom: -2px; }
 body:has(.lifted), body:has(.lifted) * { cursor: grabbing !important; user-select: none; }
 
 /* ---------- right: the open section, drawn with the guest site's own styles (site.css) ---------- */
@@ -183,6 +190,45 @@ body:has(.lifted), body:has(.lifted) * { cursor: grabbing !important; user-selec
 .preview[data-size="big"] { aspect-ratio: 4 / 3; }
 .preview[data-size="none"] { width: 30%; opacity: 0.45; }
 .photo-btns { display: flex; gap: 6px; }
+/* photo editor: the whole original, the guest frame drawn on it (3×3 grid), the result beside it */
+.dlg.cropper { width: min(820px, calc(100% - 32px)); } /* .dlg comes later in this file */
+.ce-body { display: flex; gap: 18px; align-items: center; margin-bottom: 18px; }
+.ce-stage { --h: 62dvh; position: relative; flex: none; width: min(calc(100% - 178px), calc(var(--h) * var(--ratio, 1.33))); aspect-ratio: var(--ratio, 1.33); margin: 0 auto; overflow: hidden; border-radius: 8px; touch-action: none; user-select: none; }
+.ce-stage img { display: block; width: 100%; height: 100%; } /* the stage has the photo's own ratio, so small photos fill it too */
+/* white and dark together, so the frame, grid and handles show on light and dark photos alike */
+.ce-box {
+  --ln: rgba(255, 255, 255, 0.75); --sh: rgba(0, 0, 0, 0.35);
+  position: absolute; cursor: move; outline: 1.5px solid #fff; outline-offset: -1.5px;
+  box-shadow: 0 0 0 1px var(--sh), 0 0 0 9999px rgba(4, 6, 5, 0.62);
+  background:
+    linear-gradient(to right, transparent calc(33.33% - 1px), var(--sh) 0 33.33%, var(--ln) 0 calc(33.33% + 1px), transparent 0 calc(66.67% - 1px), var(--sh) 0 66.67%, var(--ln) 0 calc(66.67% + 1px), transparent 0),
+    linear-gradient(to bottom, transparent calc(33.33% - 1px), var(--sh) 0 33.33%, var(--ln) 0 calc(33.33% + 1px), transparent 0 calc(66.67% - 1px), var(--sh) 0 66.67%, var(--ln) 0 calc(66.67% + 1px), transparent 0);
+}
+.ce-box:focus-visible { outline: 2px solid var(--primary); }
+/* corner handles sit inside the frame, so they stay visible and grabbable when it fills the photo */
+.ce-h { position: absolute; width: 26px; height: 26px; border: 0 solid #fff; filter: drop-shadow(0 0 1.5px rgba(0, 0, 0, 0.9)); }
+.ce-h[data-x="-1"] { left: 0; border-left-width: 4px; cursor: nwse-resize; }
+.ce-h[data-x="1"] { right: 0; border-right-width: 4px; }
+.ce-h[data-y="-1"] { top: 0; border-top-width: 4px; }
+.ce-h[data-y="1"] { bottom: 0; border-bottom-width: 4px; }
+.ce-h[data-x="1"][data-y="-1"], .ce-h[data-x="-1"][data-y="1"] { cursor: nesw-resize; }
+.ce-h[data-x="1"][data-y="1"] { cursor: nwse-resize; }
+.ce-h::after { content: ""; position: absolute; inset: -8px; } /* bigger grab area */
+.ce-hint { margin: -8px 0 16px; color: var(--muted); }
+.ce-side { flex: none; width: 160px; display: grid; gap: 6px; justify-items: center; color: var(--muted); }
+.ce-prev { width: 100%; aspect-ratio: 1; border-radius: 12px; background: var(--raised); }
+.ce-prev[data-size="big"] { aspect-ratio: 4 / 3; }
+.ce-btns { flex-wrap: wrap; }
+.ce-btns .ghost { color: var(--neg); }
+.ce-gap { flex: 1; }
+/* until the photo is in: a loading screen only, no half-drawn photo or frame (it looked like a bug) */
+.ce-stage[data-ready="false"] img { visibility: hidden; }
+.ce-wait { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; background: var(--raised); color: var(--muted); }
+@media (max-width: 640px) {
+  .ce-body { flex-direction: column; }
+  .ce-stage { --h: 52dvh; width: min(100%, calc(var(--h) * var(--ratio, 1.33))); }
+  .ce-side { width: 120px; }
+}
 .drop {
   display: grid; place-content: center; gap: 4px; min-height: 104px; padding: 14px; text-align: center; border: 1px dashed var(--control); border-radius: 12px;
   color: var(--muted); transition: border-color 0.15s, color 0.15s;

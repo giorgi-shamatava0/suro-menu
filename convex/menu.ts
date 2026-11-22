@@ -34,7 +34,7 @@ export const get = query({
         );
         if (items.length) categories.push({ _id: c._id, name: c.name, note: c.note, compact: c.compact, items });
       }
-      if (categories.length) out.push({ _id: s._id, name: s.name, decor: s.decor, categories });
+      if (categories.length) out.push({ _id: s._id, name: s.name, decor: s.decor, titleSize: s.titleSize, categories });
     }
     return { sections: out, settings };
   },
