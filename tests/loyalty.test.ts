@@ -503,3 +503,19 @@ test('legacy loyalty-admin staff sessions cannot manage the application', async(
  const {t}=await setup();await t.run(async ctx=>{const id=await ctx.db.insert('loyaltyStaff',{name:'legacy',hash:'unused',role:'admin',active:true});await ctx.db.insert('loyaltySessions',{token:'legacy-token',staffId:id,expiresAt:Date.now()+100000})});
  await expect(t.query(api.loyalty.dashboard,{token:'legacy-token'})).rejects.toThrow();
 });
+
+test('staff can stamp but cannot redeem rewards or administer cards',async()=>{
+ const {t,award,token,qr,programId}=await setup();await award('reward-for-staff-check',10);
+ const reward=await t.run(ctx=>ctx.db.query('loyaltyRewards').first());
+ await t.run(async ctx=>{
+  const id=await ctx.db.insert('loyaltyStaff',{name:'Counter staff',hash:'not-used',role:'staff',active:true});
+  await ctx.db.insert('loyaltySessions',{token:'staff-test-token',staffId:id,expiresAt:Date.now()+100000});
+  const row=await ctx.db.query('loyaltyLedger').first();await ctx.db.patch(row!._id,{at:Date.now()-20000});
+ });
+ await t.mutation(api.loyalty.issue,{token:'staff-test-token',qr,programId,count:1,key:'staff-purchase',reference:'staff-purchase'});
+ expect((await t.mutation(api.loyalty.lookup,{token:'staff-test-token',qr})).programs[0].stamps).toBe(1);
+ await expect(t.mutation(api.loyalty.redeem,{token:'staff-test-token',qr,rewardId:reward!._id,key:'staff-redemption',confirmed:true})).rejects.toThrow();
+ await expect(t.query(api.loyalty.dashboard,{token:'staff-test-token'})).rejects.toThrow();
+ await expect(t.mutation(api.loyalty.revokeCard,{token:'staff-test-token',qr,reason:'attempt'})).rejects.toThrow();
+ expect((await t.query(api.loyalty.publicCard,{code:qr}))?.revoked).toBe(false);
+});
