@@ -1,12 +1,12 @@
 "use client";
 
 import Image, { type StaticImageData } from "next/image";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type RefObject } from "react";
 import { preload } from "react-dom";
 import { hero, plates } from "@/lib/decor";
-import { dict, type Lang } from "@/lib/i18n";
-import LangPicker from "@/components/LanguagePicker";
-export { LangPicker };
+import { LANGS, type Lang } from "@/lib/i18n";
 
 type Section = { id: string; name: string };
 type Props = {
@@ -21,9 +21,35 @@ type Props = {
 };
 
 const d = (n: number) => ({ "--d": n }) as CSSProperties;
+const LANG_LABEL: Record<Lang, string> = { ka: "ქართული", en: "English", ru: "Русский" };
 const LOGO_COLOURS = { teal: "#5fbcac", cream: "#efe8db", white: "#ffffff" };
 let booted = false; // the loader has already played in this document
 const BGS = { now: "Now", a: "A lamplight", b: "B leaves", c: "C stone", d: "D stone+leaves", e: "E leaves on dark stone", f: "F mix" };
+
+// One small button with the current language; the other two open in a little popup.
+export function LangPicker({ lang }: { lang: Lang }) {
+  const ref = useRef<HTMLDetailsElement>(null);
+  const path = usePathname();
+  useEffect(() => {
+    const off = (e: PointerEvent) => { if (ref.current?.open && !ref.current.contains(e.target as Node)) ref.current.open = false; };
+    addEventListener("pointerdown", off);
+    return () => removeEventListener("pointerdown", off);
+  }, []);
+  return (
+    <details className="lang" ref={ref}>
+      <summary aria-label={LANG_LABEL[lang]}>{lang === "ka" ? "ქა" : lang.toUpperCase()}</summary>
+      <div className="lang-pop">
+        {LANGS.map((l) => (
+          <Link key={l} href={path.replace(/^\/(ka|en|ru)/, `/${l}`)} scroll={false} hrefLang={l} lang={l}
+            aria-current={l === lang ? "true" : undefined}
+            onClick={() => { document.cookie = `lang=${l};path=/;max-age=31536000;samesite=lax`; ref.current!.open = false; }}>
+            {LANG_LABEL[l]}
+          </Link>
+        ))}
+      </div>
+    </details>
+  );
+}
 
 /* The curtain: each plant picture once. Every stem and cut edge sits past the screen edge, and each
    piece enters and leaves along the same line through its own edge, so nothing hidden comes into view. */
@@ -111,8 +137,7 @@ export default function Hero({ lang, name, menuLabel, tagline, subline, sections
         <Image className="deco monstera drift" src={hero.monstera} alt="" priority sizes="100vw" />
         <Image className="deco pothos sway-slow" src={plates["pothos-cascade"]} alt="" priority sizes="100vw" />
         <Image className="deco frond drift" src={plates["fern-frond"]} alt="" priority sizes="100vw" />
-        <a className="hero-brand" href="/" aria-label="Suro"><span className="logo" aria-hidden="true" /></a>
-        <div className="hero-lang"><a className="hero-card-link" href="/loyalty">{dict(lang).loyalty}</a><LangPicker lang={lang} /></div>
+        <div className="hero-lang"><LangPicker lang={lang} /></div>
 
         <div className="hero-copy">
           <h1 className="logo rise"><span className="sr">{name}</span></h1>

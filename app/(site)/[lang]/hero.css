@@ -11,6 +11,22 @@ html.seen { --intro-end: 0s; }
 }
 
 /* ---------- language picker: current language, others in a popup ---------- */
+.lang { position: relative; }
+.lang summary {
+  list-style: none; cursor: pointer; min-width: 44px; height: 36px; padding: 0 12px; border-radius: 99px;
+  display: grid; place-items: center; font-size: 14px; letter-spacing: 0.02em; color: var(--ink);
+  background: rgba(15, 19, 17, 0.72); box-shadow: inset 0 0 0 1px var(--line); -webkit-tap-highlight-color: transparent;
+}
+.lang summary::-webkit-details-marker { display: none; }
+.lang-pop {
+  position: absolute; right: 0; top: calc(100% + 8px); z-index: 10; min-width: 160px; padding: 6px; border-radius: 14px;
+  background: var(--chip); box-shadow: 0 16px 40px -12px rgba(0, 0, 0, 0.8);
+  transform-origin: top right; animation: pop 0.22s var(--ease);
+}
+@keyframes pop { from { opacity: 0; scale: 0.94; } }
+.lang-pop a { display: flex; align-items: center; min-height: 44px; padding: 0 14px; border-radius: 10px; text-decoration: none; font-size: 16px; color: var(--soft); }
+.lang-pop a[aria-current] { color: var(--ink); background: rgba(239, 232, 219, 0.06); }
+.lang-pop a[aria-current]::after { content: ""; width: 7px; height: 7px; margin-left: auto; border-radius: 50%; background: var(--teal); }
 .hero-lang { position: absolute; z-index: 6; top: calc(14px + env(safe-area-inset-top, 0px)); right: var(--gut); }
 
 /* ---------- hero: a greenhouse window, plants on every edge, the name in the middle ---------- */
@@ -128,11 +144,3 @@ html.wait .hero * { animation-play-state: paused !important; }
   .drift, .rise, .hero .sway, .hero .sway-slow { animation: none !important; }
 }
 
-
-.hero-lang { display: flex; align-items: flex-start; gap: 10px; }
-.hero-card-link { display: inline-flex; align-items: center; min-height: 44px; padding: 0 16px; border-radius: 99px; background: rgba(15,19,17,.9); color: var(--ink); font-size: 14px; text-decoration: none; box-shadow: inset 0 0 0 1px var(--line); }
-.hero-card-link:hover { color: var(--teal); }
-.hero-card-link:focus-visible { outline: 2px solid var(--teal); outline-offset: 3px; }
-
-.hero-brand { position: absolute; z-index: 6; top: calc(14px + env(safe-area-inset-top, 0px)); left: var(--gut); display: block; }
-.hero-brand .logo { width: 78px; height: 54px; background: #78c8df; }

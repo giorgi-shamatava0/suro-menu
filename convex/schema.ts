@@ -52,20 +52,6 @@ export const settingsFields = {
 };
 
 export default defineSchema({
-  loyaltyMembers: defineTable({ publicCode: v.optional(v.string()), qr: v.string(), secret: v.string(), revoked: v.boolean(), updatedAt: v.number(), lastActiveAt: v.optional(v.number()) }).index("by_active", ["lastActiveAt"]).index("by_qr", ["qr"]).index("by_public_code", ["publicCode"]).index("by_secret", ["secret"]),
-  loyaltyPrograms: defineTable({ name: v.string(), description: v.string(), products: v.string(), reward: v.string(), rewardItemId: v.optional(v.id("items")), rewardNames: v.optional(tr), rewardImage: v.optional(v.id("_storage")), status: v.string(), version: v.number(), startsAt: v.optional(v.number()), endsAt: v.optional(v.number()) }),
-  loyaltyVersions: defineTable({ programId: v.id("loyaltyPrograms"), version: v.number(), threshold: v.number(), expiry: v.string(), months: v.number(), rewardDays: v.optional(v.number()), campaignEndAt: v.optional(v.number()), reward: v.string(), rewardItemId: v.optional(v.id("items")), rewardNames: v.optional(tr), rewardImage: v.optional(v.id("_storage")) }).index("by_program", ["programId", "version"]),
-  loyaltyBalances: defineTable({ memberId: v.id("loyaltyMembers"), programId: v.id("loyaltyPrograms"), versionId: v.id("loyaltyVersions"), stamps: v.number(), expiresAt: v.optional(v.number()) }).index("by_member", ["memberId"]).index("by_pair", ["memberId", "programId"]).index("by_expiry", ["expiresAt"]),
-  loyaltyLots: defineTable({ balanceId: v.id("loyaltyBalances"), remaining: v.number(), expiresAt: v.number(), key: v.string() }).index("by_balance", ["balanceId", "expiresAt"]),
-  loyaltyStats: defineTable({ members: v.number(), stampsIssued: v.number(), stampsExpired: v.number(), stampsReversed: v.number(), rewardsEarned: v.number(), rewardsRedeemed: v.number() }),
-  loyaltyRewards: defineTable({ memberId: v.id("loyaltyMembers"), programId: v.id("loyaltyPrograms"), versionId: v.id("loyaltyVersions"), label: v.string(), status: v.string(), expiresAt: v.optional(v.number()), earnedAt: v.number(), redeemedAt: v.optional(v.number()) }).index("by_member", ["memberId"]).index("by_earned", ["earnedAt"]).index("by_expiry", ["status", "expiresAt"]),
-  loyaltyLedger: defineTable({ memberId: v.id("loyaltyMembers"), programId: v.id("loyaltyPrograms"), kind: v.string(), count: v.number(), at: v.number(), actor: v.string(), key: v.string(), reference: v.string(), rewardId: v.optional(v.id("loyaltyRewards")), reversedBy: v.optional(v.id("loyaltyLedger")) }).index("by_member", ["memberId", "at"]).index("by_purchase", ["memberId", "programId", "reference", "kind"]).index("by_key", ["key"]).index("by_at", ["at"]),
-  loyaltyStaff: defineTable({ name: v.string(), hash: v.string(), role: v.string(), active: v.boolean() }).index("by_name", ["name"]),
-  loyaltySessions: defineTable({ token: v.string(), staffId: v.id("loyaltyStaff"), expiresAt: v.number() }).index("by_token", ["token"]).index("by_staff", ["staffId"]),
-  loyaltyAudit: defineTable({ actor: v.string(), event: v.string(), detail: v.string(), at: v.number() }).index("by_at", ["at"]),
-  loyaltyLimits: defineTable({ key: v.string(), count: v.number(), until: v.number() }).index("by_key", ["key"]),
-  loyaltyOffers: defineTable({ name: v.string(), description: v.string(), eligibility: v.string(), startsAt: v.number(), endsAt: v.number(), active: v.boolean(), showOnCard: v.boolean() }),
-  loyaltyBrand: defineTable({ terms: v.optional(v.object({ ka: v.string(), en: v.string(), ru: v.string() })), name: v.string(), color: v.string(), latitude: v.optional(v.number()), longitude: v.optional(v.number()) }),
   sections: defineTable(sectionFields).index("by_order", ["order"]),
   categories: defineTable(categoryFields).index("by_section", ["sectionId", "order"]),
 
