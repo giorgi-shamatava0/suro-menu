@@ -4,21 +4,23 @@ import {
   customerCopy,
   type CustomerLanguage,
 } from "@/lib/loyalty/customer-copy";
-import { useQuery } from "convex/react";
-import { api } from "@/convex/_generated/api";
 import CardPreview from "./CardPreview";
 import Join from "./Join";
-export default function Welcome({ lang: initial }: { lang: CustomerLanguage }) {
+export default function Welcome({
+  lang: initial,
+  program,
+  terms,
+}: {
+  lang: CustomerLanguage;
+  program: {
+    threshold: number;
+    reward: string;
+    rewardNames?: { ka?: string; en?: string; ru?: string };
+  } | null;
+  terms?: { ka: string; en: string; ru: string };
+}) {
   const lang = useCustomerLanguage(initial);
   const t = customerCopy[lang];
-  const program = useQuery(api.loyalty.enrollmentPreview, {});
-  if (program === undefined)
-    return (
-      <main className="loyalty-main customer-main" role="status">
-        <span className="loyalty-spinner" />
-        {t.loading}
-      </main>
-    );
   if (!program)
     return (
       <main className="loyalty-main customer-main">
@@ -31,10 +33,17 @@ export default function Welcome({ lang: initial }: { lang: CustomerLanguage }) {
   );
   return (
     <main className="loyalty-main customer-main customer-welcome" lang={lang}>
-      <h1>{t.greeting}</h1>
-      <p className="loyalty-muted">{t.intro}</p>
+      <h1>
+        {
+          {
+            ka: "მიიღე ლოიალურობის ბარათი.",
+            en: "Get your loyalty card.",
+            ru: "Получите карту лояльности.",
+          }[lang]
+        }
+      </h1>
       <CardPreview lang={lang} threshold={program.threshold} reward={reward} />
-      <Join lang={lang} />
+      <Join lang={lang} terms={terms?.[lang]} />
     </main>
   );
 }

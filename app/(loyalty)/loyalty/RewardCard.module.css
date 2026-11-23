@@ -1,0 +1,520 @@
+@font-face {
+  font-family: "Suro Card Handwriting";
+  src: url("/fonts/bpg-irubaqidze.otf") format("opentype");
+  font-weight: 400;
+  font-display: swap;
+  unicode-range: U+10A0-10FF, U+1C90-1CBF, U+2D00-2D2F;
+}
+@font-face {
+  font-family: "Suro Card Lettering";
+  src: url("/fonts/caveat.ttf") format("truetype");
+  font-weight: 400 700;
+  font-display: swap;
+}
+.scene {
+  --cream: #f2e6c7;
+  --muted: #c9cfb2;
+  container-type: inline-size;
+  perspective: 1600px;
+  margin: 0 0 24px;
+  isolation: isolate;
+}
+.turn {
+  position: relative;
+  transform-style: preserve-3d;
+  transition: transform 650ms cubic-bezier(0.22, 0.68, 0.13, 1);
+}
+.scene[data-flipped="true"] .turn {
+  transform: rotateY(180deg);
+  min-height: 0;
+}
+.front,
+.back {
+  box-sizing: border-box;
+  width: 100%;
+  border: 0;
+  border-radius: 14px;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  overflow: hidden;
+}
+.front {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-height: clamp(220px, 69cqw, 440px);
+  aspect-ratio: 1.5;
+  padding: 0;
+  color: #244432;
+  text-align: left;
+  cursor: pointer;
+  appearance: none;
+  background:
+    radial-gradient(ellipse at 0% 0%, #fff9e8, transparent 65%),
+    linear-gradient(120deg, #eee2c6, #e2d3af);
+  box-shadow:
+    0 28px 40px -18px #000b,
+    0 6px 10px -5px #0009,
+    inset 0 2px 1px #fff9e1,
+    inset 1px 0 1px #fff5d980,
+    inset -1px -2px 2px #836d4566;
+}
+.front::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: url("/decor/bg/stone-night.webp") center / 520px;
+  mix-blend-mode: multiply;
+  opacity: 0.09;
+  pointer-events: none;
+}
+.front::before {
+  content: "";
+  position: absolute;
+  inset: 7px;
+  border: 1px solid #7b81584d;
+  border-radius: 9px;
+  pointer-events: none;
+  z-index: 2;
+}
+.heading {
+  text-align: center;
+  display: block;
+  padding: clamp(20px, 4.5cqw, 28px) clamp(22px, 5cqw, 32px) 0;
+  font:
+    600 clamp(31px, 7.5cqw, 48px)/1.15 "Suro Card Handwriting",
+    "Suro Card Lettering",
+    cursive;
+  letter-spacing: -0.015em;
+  -webkit-text-stroke: 0.2px currentColor;
+  color: #234832;
+  text-shadow: 0 1px 0 #fff8e4;
+}
+.body {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  min-height: 0;
+  padding: clamp(16px, 4cqw, 26px) clamp(22px, 5cqw, 32px);
+}
+.stamps {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  width: 100%;
+}
+.stamps :global(.card-preview-stamps) {
+  display: grid;
+  grid-template-columns: repeat(var(--stamp-columns), minmax(0, 1fr));
+  gap: clamp(7px, 2cqw, 12px);
+  width: 100%;
+  margin: 0;
+  padding: 0;
+}
+.stamps :global(.card-preview-stamps[data-threshold="4"]) {
+  max-width: 86%;
+}
+.stamps :global(.card-preview-stamps[data-threshold="6"]) {
+  max-width: 54%;
+}
+.stamps :global(.card-preview-stamps > span) {
+  box-sizing: border-box;
+  display: grid;
+  position: relative;
+  place-items: center;
+  grid-column: span 2;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  border: 1px solid #59754c6b;
+  color: #285035;
+  background: linear-gradient(145deg, #bcaa7d24, #fffbeb33);
+  box-shadow:
+    inset 0 2px 3px #061d1738,
+    0 1px 0 #cdd8af26;
+}
+.stamps :global(.card-preview-stamps > [data-row-start="true"]) {
+  grid-column-start: var(--stamp-row-offset);
+}
+.stamps :global(.card-preview-stamps > [data-filled="true"]) {
+  border: 1.5px solid #345b3a;
+  background: #305a3508;
+  box-shadow:
+    inset 0 0 0 2px #e9dfc4,
+    inset 0 0 0 3px #345b3a99,
+    0 1px 2px #786a3e22;
+  transform: rotate(-12deg);
+}
+.stamps :global(.card-preview-stamps > [data-filled="true"]:nth-child(even)) {
+  transform: rotate(8deg);
+}
+.stamps :global(.card-preview-stamps > [data-current="true"]) {
+  border: 1px dashed #456b3d;
+}
+.stamps
+  :global(.card-preview-stamps > [data-gift="true"]:not([data-filled="true"])) {
+  border-color: #977137;
+  color: #7e5c25;
+}
+.stamps :global(.card-preview-stamps > [data-gift="true"])::before {
+  display: none;
+}
+.stamps :global(.stamp-impression) {
+  display: block;
+  width: 76%;
+  height: 70%;
+  background: currentColor;
+  mask: url("/logo-mask.png") center / contain no-repeat;
+  -webkit-mask: url("/logo-mask.png") center / contain no-repeat;
+}
+.stamps :global(.stamp-gift-icon) {
+  width: 44%;
+  height: 44%;
+  filter: none;
+}
+.footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: clamp(17px, 4cqw, 26px) clamp(22px, 5cqw, 32px);
+  background: linear-gradient(120deg, #365b42, #1b3c2e);
+  box-shadow:
+    inset 0 1px 0 #f7e7b84d,
+    0 -1px 2px #6c644329;
+  color: #f4e8c9;
+}
+.name {
+  font:
+    400 clamp(15px, 3.8cqw, 23px)/1.35 system-ui,
+    sans-serif;
+  letter-spacing: -0.02em;
+  overflow-wrap: anywhere;
+  text-wrap: balance;
+}
+.cue {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  max-width: 34%;
+  flex: none;
+  color: #d2d9ba;
+  font:
+    500 clamp(10px, 2.6cqw, 14px)/1.5 system-ui,
+    sans-serif;
+}
+.cue svg {
+  flex: none;
+  transition: transform 180ms ease-out;
+}
+.front:hover .cue svg {
+  transform: translateX(4px);
+}
+.earnedSeal {
+  display: grid;
+  place-items: center;
+  width: clamp(60px, 20cqw, 110px);
+  aspect-ratio: 1;
+  border: 2px solid #31593b;
+  border-radius: 50%;
+  color: #285035;
+  transform: rotate(-12deg);
+}
+.earnedSeal :global(.stamp-impression) {
+  width: 75%;
+  height: 70%;
+}
+.back {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  transform: rotateY(180deg);
+  background: #eee8db;
+  color: #243e30;
+  box-shadow: 0 28px 40px -18px #000b;
+}
+.photo {
+  display:grid;
+  place-items:center;
+  padding:0;
+  position: relative;
+  height: 100%;
+  min-height: 0;
+  aspect-ratio: auto;
+  flex: none;
+  background: #eee8db;
+  overflow: hidden;
+}
+.photo[data-has-image="false"] {
+  height: 100%;
+  aspect-ratio: auto;
+}
+.photo > img {
+  display:block;
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  object-position:center;
+  border-radius:0;
+}
+.fallback {
+  color:#244a37;
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+}
+.fallback :global(.stamp-impression) {
+  width: 90px;
+  height: 72px;
+}
+.return {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: #f1eada;
+  color: #203e2e;
+  box-shadow: 0 3px 9px #0003;
+  cursor: pointer;
+}
+.scan {
+  position:relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  min-height: 0;
+  gap: clamp(8px, 2cqw, 14px);
+  padding: clamp(12px, 3cqw, 22px);
+  color: #405440;
+  text-align: center;
+  font:
+    400 clamp(10px, 2.5cqw, 13px)/1.4 system-ui,
+    sans-serif;
+}
+.backName {
+  font:
+    400 clamp(13px, 3.3cqw, 21px)/1.3 var(--f-ka),
+    var(--f-lat),
+    Georgia,
+    serif;
+  overflow-wrap: anywhere;
+}
+.scan img {
+  display: block;
+  flex: none;
+  min-height: 0;
+  width: min(216px, 100%);
+  height: auto;
+  max-height: none;
+  aspect-ratio: 1;
+  object-fit: contain;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: white;
+  image-rendering: pixelated;
+}
+.scene button:focus-visible {
+  outline: 3px solid #e3c87d;
+  outline-offset: 5px;
+}
+.scene ::selection {
+  background: #e6d5a9;
+  color: #173c2b;
+}
+@media (max-width: 359px) {
+  .front {
+    aspect-ratio: 1.35;
+  }
+  .heading {
+    font-size: 28px;
+  }
+  .name {
+    font-size: 14px;
+  }
+  .cue {
+    max-width: 31%;
+    gap: 6px;
+  }
+  .body {
+    padding-block: 14px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .turn,
+  .cue svg {
+    transition: none;
+  }
+  .turn,
+  .back {
+    transform: none !important;
+  }
+  .scene[data-flipped="false"] .back,
+  .scene[data-flipped="true"] .front {
+    visibility: hidden;
+  }
+}
+
+@keyframes ink {
+  0% {
+    opacity: 0;
+    transform: scale(1.3) rotate(-18deg);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) rotate(-12deg);
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .stamps :global([data-stamping="true"]) {
+    animation: ink 0.5s ease-out both;
+  }
+}
+
+.stamps :global(.card-preview-stamps[data-threshold="8"]) {
+  max-width: 72%;
+}
+.stamps :global(.card-preview-stamps[data-threshold="10"]) {
+  max-width: 84%;
+}
+
+.announcement {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.celebration {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: 3;
+}
+.glint {
+  position: absolute;
+  inset: -40%;
+  background: linear-gradient(
+    115deg,
+    transparent 36%,
+    #fff9e270 48%,
+    transparent 59%
+  );
+  transform: translateX(-100%);
+}
+.spark {
+  position: absolute;
+  left: 50%;
+  top: 49%;
+  width: 4px;
+  height: 8px;
+  border-radius: 1px;
+  background: #527448;
+  opacity: 0;
+  transform: rotate(calc(var(--spark) * 45deg)) translateY(-20px);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .scene[data-celebrating="true"] .front {
+    animation: reward-land 900ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  }
+  .scene[data-celebrating="true"] .glint {
+    animation: reward-light 1200ms 150ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  }
+  .scene[data-celebrating="true"] .spark {
+    animation: reward-spark 1000ms 250ms cubic-bezier(0.15, 0.65, 0.3, 1) both;
+  }
+  .scene[data-celebrating="true"] .earnedSeal,
+  .scene[data-celebrating="true"]
+    .stamps
+    :global([data-filled="true"]:last-child) {
+    animation: reward-seal 650ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  }
+  .scene[data-celebrating="true"] .heading {
+    animation: reward-heading 650ms 200ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  }
+}
+@keyframes reward-land {
+  0% {
+    transform: translateY(0);
+  }
+  25% {
+    transform: translateY(-6px);
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
+@keyframes reward-light {
+  from {
+    transform: translateX(-70%);
+  }
+  to {
+    transform: translateX(70%);
+  }
+}
+@keyframes reward-spark {
+  0% {
+    opacity: 0;
+    transform: rotate(calc(var(--spark) * 45deg)) translateY(-20px) scale(0.7);
+  }
+  25% {
+    opacity: 0.9;
+  }
+  100% {
+    opacity: 0;
+    transform: rotate(calc(var(--spark) * 45deg))
+      translateY(clamp(-125px, -23cqw, -60px)) scale(0.4);
+  }
+}
+@keyframes reward-seal {
+  0% {
+    opacity: 0.2;
+    transform: scale(1.24) rotate(-18deg);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) rotate(-12deg);
+  }
+}
+@keyframes reward-heading {
+  from {
+    opacity: 0.2;
+    transform: translateY(5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+:global(.loyalty-shell):not(:global(.admin-loyalty)):has(.scene) {
+  max-width: none;
+  padding: 0;
+}
+:global(.customer-page):has(.scene) {
+  padding-inline: 20px;
+}
+
+.scan > span {position:absolute;bottom:clamp(14px,3.5cqw,26px);left:8px;right:8px;text-align:center}
+
+.scene[data-sample] {margin:0;pointer-events:none}
+.scene[data-sample] .front {cursor:default}

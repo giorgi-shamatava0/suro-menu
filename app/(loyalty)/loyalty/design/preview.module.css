@@ -1,0 +1,265 @@
+.studio {
+  min-height: 100dvh;
+  background:
+    radial-gradient(ellipse at 78% 30%, #293a30, transparent 60%), #111a15;
+  color: #eee7d7;
+  padding: 32px 5vw 60px;
+  font-family: system-ui, sans-serif;
+}
+.heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  max-width: 1000px;
+  margin: auto;
+  color: #aebeab;
+  font-size: 12px;
+}
+.heading a {
+  display: block;
+  width: 76px;
+  height: 48px;
+  background-color: #e1ddc4;
+}
+.layout {
+  display: grid;
+  grid-template-columns: 300px minmax(0, 560px);
+  gap: 60px;
+  align-items: center;
+  max-width: 960px;
+  margin: 70px auto 0;
+}
+.controls h1 {
+  font:
+    400 46px/1.15 var(--f-lat),
+    Georgia,
+    serif;
+  letter-spacing: -0.03em;
+  margin: 0 0 20px;
+}
+.controls p {
+  font-size: 14px;
+  line-height: 1.7;
+  color: #b8c2b2;
+  max-width: 320px;
+  margin: 0 0 36px;
+}
+.controls fieldset {
+  border: 0;
+  padding: 0;
+  margin: 0 0 25px;
+}
+.controls legend,
+.progress > span,
+.language {
+  font-size: 12px;
+  color: #d3dccb;
+}
+.controls legend {
+  margin-bottom: 12px;
+}
+.counts {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.counts button {
+  width: 40px;
+  height: 44px;
+  border: 1px solid #54664f;
+  border-radius: 6px;
+  background: #1c2b21;
+  color: #e9e6d1;
+  cursor: pointer;
+  font: 500 14px system-ui;
+}
+.counts button[aria-pressed="true"] {
+  background: #e8dfc6;
+  color: #234330;
+  border-color: #e8dfc6;
+}
+.counts button:hover {
+  background: #3b5040;
+  color: #fff4d9;
+}
+.progress {
+  display: block;
+  margin-bottom: 25px;
+}
+.progress > span {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+.progress output {
+  font-variant-numeric: tabular-nums;
+}
+.progress input {
+  width: 100%;
+  accent-color: #d6c59a;
+  cursor: pointer;
+  height: 24px;
+}
+.language {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 15px;
+}
+.language select {
+  min-height: 44px;
+  border: 1px solid #54664f;
+  border-radius: 6px;
+  padding: 8px 12px;
+  background: #1c2b21;
+  color: #eee7d7;
+  font: 14px system-ui;
+}
+.earned {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  font-size: 12px;
+  color: #d3dccb;
+  margin-top: 14px;
+  cursor: pointer;
+}
+.earned input {
+  accent-color: #d6c59a;
+  width: 17px;
+  height: 17px;
+}
+.controls .note {
+  font-size: 12px;
+  color: #a5b39e;
+  margin: 18px 0 0;
+}
+.stage {
+  width: 100%;
+  max-width: 640px;
+  justify-self: center;
+  filter: drop-shadow(12px 25px 30px #0003);
+}
+.stage :global(.reward-scene) {
+  margin: 0;
+}
+.studio :is(button, input, select, a):focus-visible {
+  outline: 2px solid #e8d5a7;
+  outline-offset: 4px;
+}
+.studio ::selection {
+  background: #e8dfc6;
+  color: #234330;
+}
+@media (max-width: 800px) {
+  .layout {
+    gap: 40px;
+    grid-template-columns: 1fr;
+    max-width: 640px;
+    margin-top: 35px;
+  }
+  .stage {
+    grid-row: 1;
+  }
+  .controls h1 {
+    font-size: 34px;
+  }
+  .controls h1 br {
+    display: none;
+  }
+  .controls p {
+    margin-bottom: 24px;
+  }
+  .studio {
+    padding: 22px 20px 45px;
+  }
+  .heading {
+    max-width: 640px;
+  }
+}
+/* Review the card in the actual website scenery, with compact controls beneath. */
+.studio {
+  position: relative;
+  z-index: 1;
+  background: none;
+  min-height: 100dvh;
+  padding: 30px 24px 60px;
+}
+.heading {
+  max-width: 1000px;
+}
+.layout {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  max-width: 640px;
+  margin: 100px auto 0;
+}
+.stage {
+  order: 0;
+  filter: none;
+  max-width: 640px;
+}
+.controls {
+  order: 1;
+  width: 100%;
+  max-width: 440px;
+}
+.controls fieldset {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin: 0 0 20px;
+}
+.controls legend {
+  float: left;
+  margin: 13px 0;
+}
+.controls .note {
+  margin-top: 12px;
+}
+@media (max-width: 600px) {
+  .studio {
+    padding: 24px 16px 45px;
+  }
+  .layout {
+    margin-top: 75px;
+    gap: 24px;
+  }
+  .controls {
+    max-width: 100%;
+  }
+  .heading {
+    max-width: 640px;
+  }
+}
+
+@media (max-width: 600px) {
+  .studio {
+    padding-inline: 0;
+  }
+  .heading,
+  .layout {
+    width: 100%;
+  }
+}
+
+.complete {
+  width: 100%;
+  min-height: 44px;
+  margin-top: 14px;
+  border: 1px solid #a8b88c;
+  border-radius: 6px;
+  background: #e8dfc6;
+  color: #234330;
+  font:
+    600 14px system-ui,
+    sans-serif;
+  cursor: pointer;
+}
+.complete:disabled {
+  opacity: 0.5;
+  cursor: default;
+}

@@ -1,7 +1,8 @@
 import { convexTest } from "convex-test";
 import { test, expect } from "vitest";
 import schema from "../convex/schema";
-import { api } from "../convex/_generated/api";
+import { api, internal } from "../convex/_generated/api";
+const enrollArgs = <T extends { secret: string }>(args: T) => args;
 const modules = {
   "../convex/_generated/server.ts": () => import("../convex/_generated/server"),
   "../convex/loyalty.ts": () => import("../convex/loyalty"),
@@ -193,7 +194,7 @@ test("expired rewards cannot be redeemed, and paused programs cannot issue", asy
   });
   await expect(award("receipt-5", 1)).rejects.toThrow();
 });
-test("enrollment requires server admission, reuses membership and limits signup bursts", async () => {
+test("enrollment requires server admission and reuses membership without consuming traffic", async () => {
   const {t,memberId}=await setup();
   await t.run(ctx=>ctx.db.delete(memberId));
   process.env.LOYALTY_ADMISSION_SECRET = "test-admission";
@@ -204,22 +205,22 @@ test("enrollment requires server admission, reuses membership and limits signup 
     qr: "d".repeat(64),
   };
   await expect(
-    t.mutation(api.loyalty.enroll, { ...a, admission: "bad" }),
+    t.mutation(api.loyalty.enroll, enrollArgs({ ...a, admission: "bad" })),
   ).rejects.toThrow();
-  await t.mutation(api.loyalty.enroll, a);
-  await t.mutation(api.loyalty.enroll, a);
+  await t.mutation(api.loyalty.enroll, enrollArgs(a));
+  await t.mutation(api.loyalty.enroll, enrollArgs(a));
   expect(
     await t.run((ctx) => ctx.db.query("loyaltyMembers").collect()),
   ).toHaveLength(1);
   for (let i = 1; i < 5; i++)
-    await t.mutation(api.loyalty.enroll, {
+    await t.mutation(api.loyalty.enroll, enrollArgs({
       ...a,
       secret: i.toString(16).repeat(64),
       qr: (i + 5).toString(16).repeat(64),
-    });
-  await expect(
-    t.mutation(api.loyalty.enroll, { ...a, secret: "f".repeat(64) }),
-  ).rejects.toThrow();
+    }));
+  await t.mutation(api.loyalty.enroll, enrollArgs({ ...a, secret: "f".repeat(64) }));
+  const traffic = await t.run(ctx => ctx.db.query("loyaltyLimits").withIndex("by_key", q => q.eq("key", "signup:hourly")).unique());
+  expect(traffic?.count).toBe(6);
   delete process.env.LOYALTY_ADMISSION_SECRET;
 });
 test("revoked memberships reject staff operations and retain a revoked card view", async () => {
@@ -409,7 +410,7 @@ test("only admin can edit terms and public cards receive exactly the saved text"
     }),
   ).rejects.toThrow();
 });
-test("reward photo configuration never adds images to the public card or changes balances", async () => {
+test("public card exposes the menu reward photo and description without changing balances", async () => {
   const { t, token, qr, programId, rewardItemId, award } = await setup();
   await award("photo-stamps", 2);
   const image = await t.run((ctx) =>
@@ -417,7 +418,7 @@ test("reward photo configuration never adds images to the public card or changes
       new Blob([new Uint8Array([137, 80, 78, 71])], { type: "image/png" }),
     ),
   );
-  await t.run(ctx=>ctx.db.patch(rewardItemId,{photo:image}));
+  await t.run(ctx=>ctx.db.patch(rewardItemId,{photo:image,description:{en:"Menu reward description"}}));
   await t.mutation(api.loyalty.saveProgram, {
     token,
     id: programId,
@@ -432,7 +433,8 @@ test("reward photo configuration never adds images to the public card or changes
   });
   const card = await t.query(api.loyalty.publicCard, { code: qr });
   expect(card?.programs[0].stamps).toBe(2);
-  expect(card?.programs[0].rewardImageUrl).toBeNull();
+  expect(card?.programs[0].rewardImageUrl).toBe(await t.run(ctx => ctx.storage.getUrl(image)));
+  expect(card?.programs[0].rewardDescriptions).toEqual({en:"Menu reward description"});
   const unsafe = await t.run((ctx) =>
     ctx.storage.store(new Blob(["<svg/>"], { type: "image/svg+xml" })),
   );
@@ -469,22 +471,12 @@ test("reward names and photos come only from a selected menu item with all trans
  expect((await t.query(api.loyalty.publicCard,{code:qr}))?.programs[0].rewardNames).toEqual(names);
  await expect(t.mutation(api.loyalty.saveProgram,{token,name:"Invalid free text",description:"",products:"Coffee",reward:"Invented item",threshold:8,expiry:"rolling",months:6})).rejects.toThrow();
 });
-test("hosted anonymous enrollment shares the global cap and never authorizes stamps",async()=>{
- const {t,programId}=await setup();process.env.LOYALTY_ADMISSION_SECRET="test-hosted-enrollment";
- const args={admission:"test-hosted-enrollment",bucket:"test-ip",qr:"c".repeat(64),secret:"d".repeat(64)};
- await t.mutation(api.loyalty.enroll,args);
- await t.mutation(api.loyalty.enroll,args);
- expect((await t.query(api.loyalty.card,{secret:args.secret}))?.programs).toHaveLength(1);
- await expect(t.mutation(api.loyalty.issue,{token:args.secret,qr:args.qr,programId,count:1,key:"forged",reference:"forged"})).rejects.toThrow();
- await t.run(async ctx=>{const limit=await ctx.db.query("loyaltyLimits").withIndex("by_key",q=>q.eq("key","signup:global")).unique();await ctx.db.patch(limit!._id,{count:200});});
- await expect(t.mutation(api.loyalty.enroll,{...args,qr:"e".repeat(64),secret:"f".repeat(64)})).rejects.toThrow();
- delete process.env.LOYALTY_ADMISSION_SECRET;
-});
 
 test('welcome awards exactly two real stamps once, including concurrent enrollment', async()=>{
  const {t}=await setup(); process.env.LOYALTY_ADMISSION_SECRET='welcome-test';
  const args={admission:'welcome-test',bucket:'welcome-ip',secret:'1'.repeat(64),qr:'2'.repeat(64)};
- const results=await Promise.all([t.mutation(api.loyalty.enroll,args),t.mutation(api.loyalty.enroll,args)]);
+ const results=await Promise.all([t.mutation(api.loyalty.enroll, enrollArgs(args)),t.mutation(api.loyalty.enroll, enrollArgs(args))]);
+ if(!results[0].ok || !results[1].ok) throw new Error("Enrollment failed");
  expect(results[0].code).toBe(results[1].code);
  expect((await t.query(api.loyalty.publicCard,{code:results[0].code}))?.programs[0].stamps).toBe(2);
  const ledger=await t.run(ctx=>ctx.db.query('loyaltyLedger').collect());
@@ -493,12 +485,8 @@ test('welcome awards exactly two real stamps once, including concurrent enrollme
  expect(member?.consentVersion).toBe('2026-11-23');
  delete process.env.LOYALTY_ADMISSION_SECRET;
 });
-test('rotating signup identifiers cannot bypass the server IP bucket', async()=>{
- const {t}=await setup();process.env.LOYALTY_ADMISSION_SECRET='limit-test';
- for(let i=1;i<=5;i++)await t.mutation(api.loyalty.enroll,{admission:'limit-test',bucket:'same-ip',secret:String(i).repeat(64),qr:String(i).repeat(64)});
- await expect(t.mutation(api.loyalty.enroll,{admission:'limit-test',bucket:'same-ip',secret:'6'.repeat(64),qr:'6'.repeat(64)})).rejects.toThrow();
- delete process.env.LOYALTY_ADMISSION_SECRET;
-});
+
+
 test('legacy loyalty-admin staff sessions cannot manage the application', async()=>{
  const {t}=await setup();await t.run(async ctx=>{const id=await ctx.db.insert('loyaltyStaff',{name:'legacy',hash:'unused',role:'admin',active:true});await ctx.db.insert('loyaltySessions',{token:'legacy-token',staffId:id,expiresAt:Date.now()+100000})});
  await expect(t.query(api.loyalty.dashboard,{token:'legacy-token'})).rejects.toThrow();
@@ -518,4 +506,194 @@ test('staff can stamp but cannot redeem rewards or administer cards',async()=>{
  await expect(t.query(api.loyalty.dashboard,{token:'staff-test-token'})).rejects.toThrow();
  await expect(t.mutation(api.loyalty.revokeCard,{token:'staff-test-token',qr,reason:'attempt'})).rejects.toThrow();
  expect((await t.query(api.loyalty.publicCard,{code:qr}))?.revoked).toBe(false);
+});
+
+test("activating another card atomically pauses the previous one", async () => {
+  const { t, token, programId, rewardItemId } = await setup();
+  const second = await t.mutation(api.loyalty.saveProgram, {
+    token,
+    name: "Second",
+    rewardItemId,
+    description: "",
+    products: "All purchases",
+    reward: "",
+    threshold: 8,
+    expiry: "rolling",
+    months: 6,
+  });
+  await t.mutation(api.loyalty.setStatus, {
+    token,
+    id: second,
+    status: "active",
+  });
+  const data = await t.query(api.loyalty.dashboard, { token });
+  expect(
+    data.programs.filter((p) => p.status === "active").map((p) => p._id),
+  ).toEqual([second]);
+  expect(data.programs.find((p) => p._id === programId)?.status).toBe("paused");
+});
+
+test("shared scanner password replaces individual access and invalidates all scanner sessions", async () => {
+  const { t, token } = await setup();
+  await t.action(api.loyalty.addStaff, {
+    token,
+    name: "old-worker",
+    password: "old-worker-secret",
+    role: "staff",
+  });
+  const oldSession = await t.action(api.loyalty.login, {
+    password: "old-worker-secret",
+  });
+  await t.action(api.loyalty.setSharedStaffPassword, {
+    token,
+    password: "scanner-test-pass",
+  });
+  await expect(
+    t.action(api.loyalty.login, {
+      username: "staff",
+      password: "old-worker-secret",
+    }),
+  ).rejects.toThrow();
+  await expect(
+    t.query(api.loyalty.dashboard, { token: oldSession }),
+  ).rejects.toThrow();
+  const session = await t.action(api.loyalty.login, {
+    username: "staff",
+    password: "scanner-test-pass",
+  });
+  await expect(
+    t.query(api.loyalty.dashboard, { token: session }),
+  ).rejects.toThrow();
+  await t.action(api.loyalty.setSharedStaffPassword, {
+    token,
+    password: "next-scanner-pass",
+  });
+  await expect(
+    t.mutation(api.loyalty.lookup, { token: session, qr: "a".repeat(64) }),
+  ).rejects.toThrow();
+  await expect(
+    t.action(api.loyalty.login, {
+      username: "other",
+      password: "next-scanner-pass",
+    }),
+  ).rejects.toThrow();
+  const data = await t.query(api.loyalty.dashboard, { token });
+  expect(data.staff.filter((s) => s.active).map((s) => s.name)).toEqual([
+    "staff",
+  ]);
+});
+
+test("simple cards save one end date and configurable welcome stamps", async () => {
+  const { t, token, programId, rewardItemId } = await setup();
+  const endsAt=Date.now()+86400000*30;
+  await t.mutation(api.loyalty.saveProgram,{token,id:programId,name:"Coffee",description:"",products:"Coffee",reward:"",rewardItemId,threshold:8,welcomeStamps:3,expiry:"campaign",months:6,endsAt});
+  process.env.LOYALTY_ADMISSION_SECRET="prefill-test";
+  const result=await t.mutation(api.loyalty.enroll, enrollArgs({admission:"prefill-test",bucket:"prefill",secret:"3".repeat(64),qr:"4".repeat(64)}));
+  if (!result.ok) throw new Error("Enrollment unexpectedly refused");
+ const card=await t.query(api.loyalty.publicCard,{code:result.code});
+  expect(card?.programs[0]).toMatchObject({stamps:3,threshold:8,expiresAt:endsAt});
+  expect(card).toHaveProperty("welcomeStamps",3);
+  await expect(t.mutation(api.loyalty.saveProgram,{token,id:programId,name:"Coffee",description:"",products:"Coffee",reward:"",rewardItemId,threshold:4,welcomeStamps:4,expiry:"campaign",months:6,endsAt})).rejects.toThrow();
+  delete process.env.LOYALTY_ADMISSION_SECRET;
+});
+
+test("statistics exclude all welcome gifts and count rewards at completion by item",async()=>{
+ const {t,token,programId,rewardItemId}=await setup();
+ const endsAt=Date.now()+86400000*30;
+ await t.mutation(api.loyalty.saveProgram,{token,id:programId,name:"Coffee",description:"",products:"Coffee",reward:"",rewardItemId,threshold:4,welcomeStamps:2,expiry:"campaign",months:6,endsAt});
+ process.env.LOYALTY_ADMISSION_SECRET="stats-test";
+ await t.mutation(api.loyalty.enroll, enrollArgs({admission:"stats-test",bucket:"stats",secret:"5".repeat(64),qr:"6".repeat(64)}));
+ await t.run(async ctx=>{for(const row of await ctx.db.query("loyaltyLedger").collect())if(row.actor==="system")await ctx.db.patch(row._id,{at:Date.now()-20000})});
+ await t.mutation(api.loyalty.issue,{token,programId,qr:"6".repeat(64),count:2,key:"paid-stats",reference:"paid-stats"});
+ const stats=await t.query(api.loyalty.statistics,{token,programId,from:Date.now()-86400000,to:Date.now()+86400000});
+ expect(stats.cards).toBe(1);expect(stats.stamps).toBe(2);expect(stats.gifts).toBe(1);
+ expect(stats.breakdown[0]).toMatchObject({programId,count:1,item:"ყავა"});
+ expect(stats.programs[0]).toMatchObject({cards:1,stamps:2,gifts:1});
+ delete process.env.LOYALTY_ADMISSION_SECRET;
+});
+
+test("all three policy translations are required",async()=>{
+ const {t,token}=await setup();
+ for(const lang of ["ka","en","ru"]){const terms={ka:"ქართული",en:"English",ru:"Русский",[lang]:"   "};await expect(t.mutation(api.loyalty.saveTerms,{token,terms})).rejects.toThrow();}
+});
+
+test("no active card disables enrollment preview and enrollment",async()=>{
+ const {t,token,programId}=await setup();
+ await t.mutation(api.loyalty.setStatus,{token,id:programId,status:"paused"});
+ expect(await t.query(api.loyalty.enrollmentPreview,{})).toBeNull();
+ process.env.LOYALTY_ADMISSION_SECRET="no-card-test";
+ await expect(t.mutation(api.loyalty.enroll, enrollArgs({admission:"no-card-test",bucket:"none",secret:"7".repeat(64),qr:"8".repeat(64)}))).rejects.toThrow("No active");
+ expect(await t.run(ctx=>ctx.db.query("loyaltyMembers").collect())).toHaveLength(1);
+ delete process.env.LOYALTY_ADMISSION_SECRET;
+});
+
+
+
+test("admin sets customer points without counting purchases and completion is idempotent",async()=>{
+ const {t,token,qr,programId}=await setup();
+ await expect(t.mutation(api.loyalty.setPoints,{token:"invalid",qr,programId,points:3,key:"bad"})).rejects.toThrow();
+ await t.mutation(api.loyalty.setPoints,{token,qr,programId,points:3,key:"adjust-three"});
+ expect((await t.mutation(api.loyalty.lookup,{token,qr})).programs[0].stamps).toBe(3);
+ await t.mutation(api.loyalty.setPoints,{token,qr,programId,points:1,key:"adjust-one"});
+ expect((await t.mutation(api.loyalty.lookup,{token,qr})).programs[0].stamps).toBe(1);
+ const completion={token,qr,programId,points:10,key:"adjust-complete"};
+ await t.mutation(api.loyalty.setPoints,completion);await t.mutation(api.loyalty.setPoints,completion);
+ const card=await t.mutation(api.loyalty.lookup,{token,qr});expect(card.programs[0].stamps).toBe(0);expect(card.rewards).toHaveLength(1);
+ const report=await t.query(api.loyalty.statistics,{token,from:Date.now()-86400000,to:Date.now()+86400000});expect(report.stamps).toBe(0);expect(report.gifts).toBe(1);
+ await expect(t.mutation(api.loyalty.setPoints,{token,qr,programId,points:11,key:"too-high"})).rejects.toThrow();
+});
+
+test("only admin can read encrypted staff credentials; primary admin password stays separate", async()=>{
+ const {t,token}=await setup();const previous=process.env.LOYALTY_ADMISSION_SECRET;process.env.LOYALTY_ADMISSION_SECRET="credential-display-test-secret";
+ try {
+  await t.action(api.loyalty.setSharedStaffPassword,{token,password:"display-test-password"});
+  await t.action(api.loyalty.setSignupPin,{token,pin:"271828"});
+  expect(await t.action(api.loyalty.currentCredentials,{token})).toEqual({staffPassword:"display-test-password",pin:"271828"});
+  const stored=await t.run(async ctx=>({staff:await ctx.db.query("loyaltyStaff").first(),pin:await ctx.db.query("loyaltySignupSettings").first()}));
+  expect(stored.staff?.displaySecret).toMatch(/^v1\./);expect(stored.staff?.displaySecret).not.toContain("display-test-password");expect(stored.pin?.displaySecret).not.toContain("271828");
+  const staffToken=await t.action(api.loyalty.login,{username:"staff",password:"display-test-password"});
+  await expect(t.action(api.loyalty.currentCredentials,{token:staffToken})).rejects.toThrow();
+  await expect(t.action(api.loyalty.currentCredentials,{token:"invalid"})).rejects.toThrow();
+  const dashboard=await t.query(api.loyalty.dashboard,{token});expect(dashboard.staff[0]).not.toHaveProperty("displaySecret");expect(dashboard.staff[0]).not.toHaveProperty("hash");
+  await t.action(api.loyalty.setSharedStaffPassword,{token,password:"replacement-test-password"});
+  expect((await t.action(api.loyalty.currentCredentials,{token})).staffPassword).toBe("replacement-test-password");
+  process.env.LOYALTY_ADMISSION_SECRET="different-key";expect(await t.action(api.loyalty.currentCredentials,{token})).toEqual({staffPassword:null,pin:null});
+ } finally {if(previous===undefined)delete process.env.LOYALTY_ADMISSION_SECRET;else process.env.LOYALTY_ADMISSION_SECRET=previous;}
+});
+
+test("shared staff history links final scans to the exact reward and duplicate scans do not create another gift",async()=>{
+ const {t,qr,programId}=await setup();
+ await t.run(async ctx=>{const id=await ctx.db.insert("loyaltyStaff",{name:"staff",hash:"unused",role:"staff",active:true});for(const token of ["shared-scan-a","shared-scan-b"])await ctx.db.insert("loyaltySessions",{staffId:id,token,expiresAt:Date.now()+3600000})});
+ const token="shared-scan-a";
+ const first=await t.mutation(api.loyalty.issue,{token,qr,programId,count:9,key:"staff-nine",reference:"receipt-nine"});expect(first.rewards).toHaveLength(0);expect(first.stamps).toBe(9);
+ await t.run(async ctx=>{const entry=await ctx.db.query("loyaltyLedger").withIndex("by_key",q=>q.eq("key","staff-nine")).unique();await ctx.db.patch(entry!._id,{at:Date.now()-20000})});
+ const args={token,qr,programId,count:1,key:"staff-final",reference:"receipt-final"};
+ const final=await t.mutation(api.loyalty.issue,args);expect(final.stamps).toBe(0);expect(final.rewards).toHaveLength(1);expect(final.rewards[0].label).toBe("ყავა");
+ const repeat=await t.mutation(api.loyalty.issue,args);expect(repeat.rewards).toEqual(final.rewards);
+ const history=await t.query(api.loyalty.staffActivity,{token:"shared-scan-b",kind:"history"});expect(history).toHaveLength(2);expect(history[0]).toMatchObject({code:qr,points:1});expect(history[0].rewards[0].id).toBe(final.rewards[0].id);expect(history[0]).not.toHaveProperty("secret");expect(history[0]).not.toHaveProperty("key");
+ const gifts=await t.query(api.loyalty.staffActivity,{token,kind:"rewards"});expect(gifts).toHaveLength(1);expect(gifts[0].at).toBe(final.rewards[0].at);
+ await expect(t.query(api.loyalty.staffActivity,{token:"invalid",kind:"history"})).rejects.toThrow();
+});
+
+
+test("historical staff rewards are linked without changing balances or issuing gifts",async()=>{
+ const {t,qr,programId}=await setup();
+ await t.run(async ctx=>{const id=await ctx.db.insert("loyaltyStaff",{name:"staff",hash:"unused",role:"staff",active:true});await ctx.db.insert("loyaltySessions",{staffId:id,token:"legacy-staff",expiresAt:Date.now()+3600000})});
+ const token="legacy-staff";
+ const result=await t.mutation(api.loyalty.issue,{token,qr,programId,count:10,key:"legacy-gift",reference:"legacy-receipt"});
+ await t.run(async ctx=>{const entry=await ctx.db.query("loyaltyLedger").withIndex("by_key",q=>q.eq("key","legacy-gift")).unique();await ctx.db.patch(entry!._id,{rewardIds:undefined,earnedReward:undefined})});
+ expect(await t.query(api.loyalty.staffActivity,{token,kind:"rewards"})).toHaveLength(0);
+ expect(await t.mutation(internal.loyalty.backfillStaffRewardLinks,{})).toBe(1);
+ expect(await t.mutation(internal.loyalty.backfillStaffRewardLinks,{})).toBe(0);
+ const feed=await t.query(api.loyalty.staffActivity,{token,kind:"rewards"});expect(feed).toHaveLength(1);expect(feed[0].rewards[0].id).toBe(result.rewards[0].id);
+ expect((await t.mutation(api.loyalty.lookup,{token,qr})).rewards).toHaveLength(1);
+});
+
+test("staff session status rejects expired or revoked scanner access",async()=>{
+ const {t}=await setup();
+ const id=await t.run(async ctx=>{const person=await ctx.db.insert("loyaltyStaff",{name:"staff",hash:"unused",role:"staff",active:true});await ctx.db.insert("loyaltySessions",{staffId:person,token:"scanner-status",expiresAt:Date.now()+3600000});return person});
+ expect(await t.query(api.loyalty.scannerSession,{token:"scanner-status"})).toHaveProperty("expiresAt");
+ expect(await t.query(api.loyalty.scannerSession,{token:"invalid"})).toBeNull();
+ await t.run(ctx=>ctx.db.patch(id,{active:false}));expect(await t.query(api.loyalty.scannerSession,{token:"scanner-status"})).toBeNull();
+ await t.run(async ctx=>{await ctx.db.patch(id,{active:true});const session=await ctx.db.query("loyaltySessions").withIndex("by_token",q=>q.eq("token","scanner-status")).unique();await ctx.db.patch(session!._id,{expiresAt:Date.now()-1})});expect(await t.query(api.loyalty.scannerSession,{token:"scanner-status"})).toBeNull();
 });

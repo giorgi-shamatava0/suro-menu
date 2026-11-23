@@ -1,5 +1,13 @@
 export const activationCopy = {
   en: {
+    recoveryTitle: "Don’t lose your QR code",
+    recoveryBody:
+      "Do both: add your card to your home screen for easy access, and save the QR image as a backup if browser or app data is cleared.",
+    saveQr: "Save QR image",
+    saved: "Card saved",
+    dismiss: "Close",
+    recoveryInfo: "Save your card",
+
     consent:
       "I agree to the loyalty terms and privacy notice. Store my card identifier on this device and my stamps, rewards, activation consent and staff transaction records on Suro’s servers.",
     warning:
@@ -17,6 +25,14 @@ export const activationCopy = {
     terms: "Loyalty terms",
   },
   ka: {
+    recoveryTitle: "არ დაკარგო QR კოდი",
+    recoveryBody:
+      "გირჩევთ ორივეს: დაამატე ბარათი მთავარ ეკრანზე და შეინახე QR სურათად — ბრაუზერის ან აპის მონაცემების წაშლის შემთხვევაშიც ბარათს გახსნი.",
+    saveQr: "QR კოდის შენახვა",
+    saved: "ბარათი შენახულია",
+    dismiss: "დახურვა",
+    recoveryInfo: "ბარათის შენახვა",
+
     consent:
       "ვეთანხმები ლოიალობის პირობებსა და კონფიდენციალურობის შეტყობინებას. ბარათის იდენტიფიკატორი შეინახება ამ მოწყობილობაზე, ხოლო შტამპები, საჩუქრები, აქტივაციის თანხმობა და თანამშრომელთა ოპერაციები — სუროს სერვერზე.",
     warning:
@@ -34,6 +50,14 @@ export const activationCopy = {
     terms: "ლოიალობის პირობები",
   },
   ru: {
+    recoveryTitle: "Не потеряйте QR-код",
+    recoveryBody:
+      "Рекомендуем оба шага: добавьте карту на главный экран и сохраните QR как резервную копию на случай очистки данных браузера или приложения.",
+    saveQr: "Сохранить QR-код",
+    saved: "Карта сохранена",
+    dismiss: "Закрыть",
+    recoveryInfo: "Сохранить карту",
+
     consent:
       "Я принимаю условия программы и уведомление о конфиденциальности. Идентификатор карты сохранится на устройстве, а штампы, подарки, согласие на активацию и операции сотрудников — на серверах Suro.",
     warning:

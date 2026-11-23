@@ -4,3 +4,5 @@
 - `marck-script.ttf`: Marck Script by Denis Masharov and Marck Fogel, SIL Open Font License 1.1. Source: https://github.com/google/fonts/tree/main/ofl/marckscript . License: MarckScript-OFL.txt.
 
 Both fonts are served locally. Georgian uses the actual Georgian calligraphic face; Latin, Cyrillic and numerals use Marck Script. No simulated italic or browser cursive substitute.
+
+Live flip-card heading: `bpg-irubaqidze.otf` is the unmodified BPG Irubaqidze GPL&GNU face from the same OpenELA source archive above, covered by BPG-LICENSE.txt. `caveat.ttf` is Caveat (variable, 400–700), from https://github.com/google/fonts/tree/main/ofl/caveat, covered by Caveat-OFL.txt. Only the card heading uses these handwritten faces; counters and item names remain upright.

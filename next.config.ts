@@ -2,6 +2,7 @@ import type { NextConfig } from "next";
 
 const config: NextConfig = {
   cacheComponents: true,
+  distDir: process.env.SURO_ADMIN_PREVIEW === "1" ? ".next-admin-preview" : ".next",
   // background chooser (?bg) everywhere except the production deploy
   env: { BG_LAB: process.env.VERCEL_ENV === "production" ? "" : "1" },
   partialPrefetching: true,

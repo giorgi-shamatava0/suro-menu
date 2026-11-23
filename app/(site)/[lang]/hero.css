@@ -63,14 +63,10 @@ html.seen { --intro-end: 0s; }
 @keyframes lift { to { background-color: rgba(15, 19, 17, 0); visibility: hidden; } }
 .seen .intro { display: none; }
 html.seen { --intro-end: 0s; }
-/* nothing moves until every picture is decoded (or 2.5s have passed) */
+/* Start the optional mobile curtain when the inline bootstrap runs. */
 html:not(.intro-go):not(.seen):has(.intro) :is(.intro, .intro *, .hero *) { animation-play-state: paused !important; }
 html:not(:has(.intro)) { --intro-end: 0s; }
-/* repeat visits: the whole hero appears at once, when its pictures are ready (see START in Hero.tsx) */
-.hero { transition: opacity 0.35s ease; }
-html.wait .hero { opacity: 0; }
-html.wait .hero * { animation-play-state: paused !important; }
-@media (prefers-reduced-motion: reduce) { .hero { transition: none; } }
+/* The header stays visible while decorative images load. */
 
 /* Each piece lives on one line through its own screen edge (--tx, --ty). It springs in along that line,
    still settling when it is pushed back out; near pieces (--grow) travel further and swell as they pass you. */
@@ -111,7 +107,9 @@ html.wait .hero * { animation-play-state: paused !important; }
 
 /* ---------- laptop and wider ---------- */
 @media (min-width: 900px) {
-  .hero { min-height: 640px; }
+  .intro { display: none; }
+  .hero { min-height: 640px; --intro-end: 0s; }
+  .hero .rise { animation-delay: calc(var(--d, 0) * 60ms); animation-duration: 0.35s; }
   .canopy { left: 0; top: -5vw; width: 100vw; }
   .basket { left: 2vw; top: 4svh; width: 360px; }
   .bulbs { right: 33vw; width: 160px; }

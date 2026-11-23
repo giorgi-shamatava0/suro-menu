@@ -12,3 +12,5 @@ CLAUDE.md
 
 .impeccable/*
 !.impeccable/design.json
+
+.next-admin-preview/

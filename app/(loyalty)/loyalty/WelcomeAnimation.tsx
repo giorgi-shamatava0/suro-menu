@@ -1,51 +1,89 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { activationCopy } from "@/lib/loyalty/activation-copy";
 import type { CustomerLanguage } from "@/lib/loyalty/customer-copy";
+
+type Stage =
+  | "off"
+  | "empty"
+  | "thanks"
+  | "stamp"
+  | "gift"
+  | "shuffle"
+  | "pick"
+  | "reveal"
+  | "won";
 export default function WelcomeAnimation({
   code,
   lang,
   onProgress,
+  welcomeStamps = 2,
 }: {
+  welcomeStamps?: number;
   code: string;
   lang: CustomerLanguage;
   onProgress: (n: number | null) => void;
 }) {
-  const timersRef=useRef<ReturnType<typeof setTimeout>[]>([]);
+  const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
+  const requested = useRef<boolean | null>(null);
   const dialog = useRef<HTMLDivElement>(null);
-  const [stage, setStage] = useState("off");
+  const [stage, setStage] = useState<Stage>("off");
   const [picked, setPicked] = useState<number | null>(null);
   const a = activationCopy[lang];
-  useEffect(() => {
-    const url=new URL(location.href);
-    let welcome=url.searchParams.get("welcome")==="1";
-    try { welcome=welcome||sessionStorage.getItem("suro-welcome")===code;sessionStorage.removeItem("suro-welcome"); }catch{}
-    if(!welcome)return;
+  const game = ["gift", "shuffle", "pick", "reveal"].includes(stage);
+
+  useLayoutEffect(() => {
+    const url = new URL(location.href);
+    if (requested.current === null) {
+      requested.current = url.searchParams.get("welcome") === "1";
+      try {
+        requested.current ||= sessionStorage.getItem("suro-welcome") === code;
+        sessionStorage.removeItem("suro-welcome");
+      } catch {}
+    }
+    if (!requested.current) return;
     url.searchParams.delete("welcome");
-    history.replaceState(history.state,"",url.pathname+url.search);
-    setStage("thanks");
+    history.replaceState(
+      history.state,
+      "",
+      url.pathname + url.search + url.hash,
+    );
     onProgress(0);
-    const timers = [
-      setTimeout(() => {
+    setStage("empty");
+    const after = (delay: number, action: () => void) =>
+      setTimeout(action, delay);
+    timers.current = [
+      after(2000, () => setStage("thanks")),
+      after(2900, () => {
         setStage("stamp");
         onProgress(1);
-      }, 1800),
-      setTimeout(() => setStage("gift"), 4800),
-      setTimeout(() => setStage("shuffle"), 5800),
-      setTimeout(() => setStage("pick"), 7600),
+      }),
+      // Allow the 600ms impression to settle, then hold the card for 3 seconds.
+      ...(welcomeStamps > 1
+        ? [
+            after(6500, () => setStage("gift")),
+            after(7700, () => setStage("shuffle")),
+            after(9500, () => setStage("pick")),
+          ]
+        : [
+            after(6500, () => {
+              setStage("off");
+              onProgress(null);
+            }),
+          ]),
     ];
-    timersRef.current = timers;
-    return () => timers.forEach(clearTimeout);
-  }, [code, onProgress]);
+    return () => timers.current.forEach(clearTimeout);
+  }, [code, onProgress, welcomeStamps]);
+
   useEffect(() => {
-    if (stage === "off") return;
+    if (!game) return;
     const previous = document.activeElement as HTMLElement | null;
     const oldOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     dialog.current?.focus();
     const keys = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
-        timersRef.current.forEach(clearTimeout);
+        timers.current.forEach(clearTimeout);
         setStage("off");
         onProgress(null);
       }
@@ -55,13 +93,10 @@ export default function WelcomeAnimation({
             "button:not(:disabled)",
           ) ?? [],
         );
-        if (!buttons.length) {
-          e.preventDefault();
-          return;
-        }
         const first = buttons[0],
           last = buttons[buttons.length - 1];
-        if (
+        if (!buttons.length) e.preventDefault();
+        else if (
           e.shiftKey &&
           (document.activeElement === first ||
             document.activeElement === dialog.current)
@@ -84,75 +119,29 @@ export default function WelcomeAnimation({
       document.removeEventListener("keydown", keys);
       previous?.focus();
     };
-  }, [stage, onProgress]);
+  }, [game, onProgress]);
+
   if (stage === "off") return null;
-  return (
-    <div
-      className={`welcome-celebration stage-${stage}`}
-      ref={dialog}
-      tabIndex={-1}
-      role="dialog"
-      aria-modal="true"
-      aria-label={a.thanks}
-    >
-      <div className="welcome-visual" aria-live="polite">
-        <h2>
-          {stage === "thanks" || stage === "stamp"
-            ? a.thanks
-            : stage === "won"
-              ? a.won
-              : stage === "pick"
-                ? a.pick
-                : a.gift}
-        </h2>
-        {(stage === "stamp" || stage === "won") && (
-          <div
-            className="welcome-seal"
-            aria-label={stage === "won" ? "2" : "1"}
-          >
-            <span className="loyalty-mark" />
-          </div>
-        )}
-        {(stage === "gift" || stage === "won") && (
-          <svg
-            className="welcome-gift"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.2"
-          >
-            <path d="M4 11h16v10H4zM3 7h18v4H3zM12 7v14M12 7C5 7 5 1 9 3c2 1 3 4 3 4Zm0 0c7 0 7-6 3-4-2 1-3 4-3 4Z" />
-          </svg>
-        )}
-        {(stage === "shuffle" || stage === "pick" || picked !== null) && (
-          <div className="welcome-cups">
-            {[0, 1, 2].map((i) => (
-              <button
-                key={i}
-                className={picked === i ? "cup-picked" : ""}
-                disabled={stage !== "pick"}
-                aria-label={`${a.pick} ${i + 1}`}
-                onClick={() => {
-                  setPicked(i);
-                  setStage("won");
-                  onProgress(2);
-                }}
-              >
-                <svg
-                  viewBox="0 0 72 80"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                >
-                  <path d="M12 68 20 18h32l8 50H12ZM8 69h56M23 12h26" />
-                </svg>
-              </button>
-            ))}
-          </div>
+  if (!game)
+    return (
+      <div
+        className={`welcome-card-message stage-${stage}`}
+        role="status"
+        aria-live="polite"
+      >
+        {stage !== "empty" && (
+          <p key={stage === "won" ? "won" : "thanks"}>
+            {stage === "won"
+              ? {
+                  ka: `${welcomeStamps - 1} შტამპი საჩუქრად!`,
+                  en: `${welcomeStamps - 1} gift ${welcomeStamps === 2 ? "stamp" : "stamps"}!`,
+                  ru: `Штампы в подарок: ${welcomeStamps - 1}!`,
+                }[lang]
+              : a.thanks}
+          </p>
         )}
         {stage === "won" && (
           <button
-            autoFocus
             className="loyalty-primary"
             onClick={() => {
               setStage("off");
@@ -162,6 +151,56 @@ export default function WelcomeAnimation({
             {a.close}
           </button>
         )}
+      </div>
+    );
+  return (
+    <div
+      className={`welcome-celebration stage-${stage}`}
+      ref={dialog}
+      tabIndex={-1}
+      role="dialog"
+      aria-modal="true"
+      aria-label={a.gift}
+    >
+      <div className="welcome-visual" aria-live="polite">
+        <h2 key={stage === "pick" ? "pick" : "gift"}>
+          {stage === "pick" ? a.pick : a.gift}
+        </h2>
+        <div className="welcome-cups">
+          {[0, 1, 2].map((i) => (
+            <button
+              key={i}
+              type="button"
+              className={picked === i ? "cup-picked" : ""}
+              disabled={stage !== "pick"}
+              aria-label={`${a.pick} ${i + 1}`}
+              onClick={() => {
+                if (picked !== null) return;
+                setPicked(i);
+                setStage("reveal");
+                timers.current.push(
+                  setTimeout(() => {
+                    setStage("won");
+                    onProgress(welcomeStamps);
+                  }, 1200),
+                );
+              }}
+            >
+              <span className="cup-prize" aria-hidden="true">
+                <span className="loyalty-mark" />
+              </span>
+              <img
+                className="cup-model"
+                src="/decor/game-cup.webp"
+                width="256"
+                height="256"
+                alt=""
+                draggable={false}
+              />
+              <span className="cup-shadow" aria-hidden="true" />
+            </button>
+          ))}
+        </div>
       </div>
     </div>
   );

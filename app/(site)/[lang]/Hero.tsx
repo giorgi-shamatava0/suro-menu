@@ -37,16 +37,12 @@ const CURTAIN: { src: StaticImageData; c: string }[] = [
   { src: plates["monstera-b"], c: "c-right" },
 ];
 
-// Start only when every picture is downloaded *and decoded*, so the first frame is never half-ready (max 2.5s).
-// Repeat visits skip the loader, so the hero stays hidden ("wait") until its plants, logo and fonts are ready, then fades in whole.
+// Decorative assets must never gate the header or its controls. The curtain is
+// only a first-visit enhancement on small screens; desktop reveals immediately.
 const START = `(function(){var h=document.documentElement,lab=/[?&]lab/.test(location.search),seen=0;
-try{if(!lab&&sessionStorage.getItem("suro-intro"))seen=1;else sessionStorage.setItem("suro-intro","1")}catch(e){}
-var done=0,go=function(){if(!done){done=1;requestAnimationFrame(function(){h.classList.add("intro-go");h.classList.remove("wait")})}};
-var ready=function(imgs){Promise.all(imgs.map(function(i){return i.decode?i.decode().catch(function(){}):0})).then(go);setTimeout(go,2500)};
-if(!seen)return ready([].slice.call(document.querySelectorAll(".intro img")));
-h.classList.add("seen","wait");
-document.addEventListener("DOMContentLoaded",function(){var logo=new Image();logo.src="/logo-mask.png";
-ready([].slice.call(document.querySelectorAll(".hero .deco")).concat(logo,document.fonts?{decode:function(){return document.fonts.ready}}:[]))})})()`;
+try{seen=!lab&&sessionStorage.getItem("suro-intro");sessionStorage.setItem("suro-intro","1")}catch(e){}
+if(seen||matchMedia("(min-width: 900px), (prefers-reduced-motion: reduce)").matches)h.classList.add("seen");
+h.classList.remove("wait");h.classList.add("intro-go")})()`;
 
 function LabPanel() {
   const [on, setOn] = useState(false);
@@ -97,7 +93,7 @@ export default function Hero({ lang, name, menuLabel, tagline, subline, sections
       {intro && (
         <>
           <div className="intro" aria-hidden="true">
-            {CURTAIN.map(({ src, c }) => <Image key={c} className={c} src={src} alt="" priority sizes="100vw" />)}
+            {CURTAIN.map(({ src, c }) => <Image key={c} className={c} src={src} alt="" loading="lazy" sizes={c === "c-top" || c === "c-bottom" ? "100vw" : "(min-width: 900px) 640px, 75vw"} />)}
           </div>
           <script dangerouslySetInnerHTML={{ __html: START }} />
         </>
@@ -105,12 +101,12 @@ export default function Hero({ lang, name, menuLabel, tagline, subline, sections
       <noscript><style>{".intro{display:none}.hero *{animation:none!important}"}</style></noscript>
 
       <header className="hero" ref={heroRef} id="top">
-        <Image className="deco canopy drift" src={hero.canopy} alt="" priority sizes="100vw" />
-        <Image className="deco basket sway" src={hero.basket} alt="" priority sizes="(min-width: 900px) 380px, 62vw" />
-        <Image className="deco bulbs sway-slow" src={hero.bulbs} alt="" priority sizes="(min-width: 900px) 170px, 30vw" />
-        <Image className="deco monstera drift" src={hero.monstera} alt="" priority sizes="100vw" />
-        <Image className="deco pothos sway-slow" src={plates["pothos-cascade"]} alt="" priority sizes="100vw" />
-        <Image className="deco frond drift" src={plates["fern-frond"]} alt="" priority sizes="100vw" />
+        <Image className="deco canopy drift" src={hero.canopy} alt="" loading="eager" sizes="(min-width: 900px) 100vw, 140vw" />
+        <Image className="deco basket sway" src={hero.basket} alt="" loading="eager" sizes="(min-width: 900px) 360px, 62vw" />
+        <Image className="deco bulbs sway-slow" src={hero.bulbs} alt="" loading="eager" sizes="(min-width: 900px) 160px, 30vw" />
+        <Image className="deco monstera drift" src={hero.monstera} alt="" loading="eager" sizes="(min-width: 900px) 560px, 68vw" />
+        <Image className="deco pothos sway-slow" src={plates["pothos-cascade"]} alt="" loading="eager" sizes="(min-width: 900px) 200px, 30vw" />
+        <Image className="deco frond drift" src={plates["fern-frond"]} alt="" loading="eager" sizes="(min-width: 900px) 460px, 70vw" />
         <div className="hero-lang"><LangPicker lang={lang} /></div>
 
         <div className="hero-copy">

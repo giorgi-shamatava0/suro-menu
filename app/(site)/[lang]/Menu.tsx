@@ -30,6 +30,9 @@ export default function Menu({ lang, t, menu }: Props) {
   const chipsRef = useRef<HTMLDivElement>(null);
   const heroRef = useRef<HTMLElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
+  const closingHistory = useRef(false);
+  const pendingDialog = useRef<HTMLDialogElement | null>(null);
+  const scrollRestoration = useRef<History["scrollRestoration"] | null>(null);
 
   const all = useMemo(() => sections.flatMap((sec) => sec.cats.flatMap((c) => c.items.map((it) => ({ it, cat: c, sec })))), [sections]);
   const presentFilters = FILTERS.filter((f) => all.some(({ it }) => matches(it, [f])));
@@ -70,28 +73,57 @@ export default function Menu({ lang, t, menu }: Props) {
 
   // Dialogs push a history entry so the phone's back button closes them.
   useEffect(() => {
-    const onPop = () => { for (const d of [indexRef.current, zoomRef.current]) if (d?.open) close(d, true); };
+    const onPop = () => {
+      // An explicit close already released the modal. Its asynchronous Back
+      // event must not close a preview the guest has just reopened.
+      if (!closingHistory.current) {
+        for (const d of [indexRef.current, zoomRef.current]) if (d?.open) close(d, true);
+      }
+      closingHistory.current = false;
+      const pending = pendingDialog.current;
+      pendingDialog.current = null;
+      if (pending) show(pending);
+      if (!indexRef.current?.open && !zoomRef.current?.open) restoreScroll();
+    };
     addEventListener("popstate", onPop);
-    return () => removeEventListener("popstate", onPop);
+    return () => { removeEventListener("popstate", onPop); restoreScroll(); };
   }, []);
 
+  function restoreScroll() {
+    if (scrollRestoration.current === null) return;
+    history.scrollRestoration = scrollRestoration.current;
+    scrollRestoration.current = null;
+  }
   function show(d: HTMLDialogElement) {
     if (d.open) return;
+    // Let the previous history traversal finish before adding another entry.
+    // Otherwise a very fast reopen can consume the new entry and leave the page.
+    if (closingHistory.current) { pendingDialog.current = d; return; }
+    // Same-page dialog entries should not trigger the browser's animated
+    // scroll restoration when dismissed.
+    if (scrollRestoration.current === null) scrollRestoration.current = history.scrollRestoration;
+    history.scrollRestoration = "manual";
     d.showModal();
-    requestAnimationFrame(() => requestAnimationFrame(() => d.classList.add("in")));
+    requestAnimationFrame(() => { if (d.open) d.classList.add("in"); });
     history.pushState({ dlg: d.id }, "");
   }
   function close(d: HTMLDialogElement, fromPop = false) {
     if (!d.open) return;
     d.classList.remove("in");
-    setTimeout(() => d.close(), reduced() ? 0 : 380);
-    if (!fromPop && history.state?.dlg) history.back();
+    // Release modal focus/inertness immediately. A delayed close can block the
+    // next click and can close a dialog that has already been reopened.
+    d.close();
+    if (!fromPop && history.state?.dlg) {
+      closingHistory.current = true;
+      history.back();
+    } else if (fromPop || !history.state?.dlg) restoreScroll();
   }
   // Leave a dialog and land somewhere on the page: swap the dialog's history entry for the target's hash.
   function jump(id: string, highlight = false) {
     const d = indexRef.current!;
     d.classList.remove("in");
     d.close();
+    restoreScroll();
     history.replaceState(null, "", `#${id}`);
     const el = document.getElementById(id);
     if (!el) return;
@@ -229,8 +261,8 @@ export default function Menu({ lang, t, menu }: Props) {
           <div className="zoom-card">
             {/* keyed: a new dish gets new img elements, so the last dish's photo never lingers while this one loads */}
             <div className="zoom-photo" key={zoom.photo}>
-              <Image className="zoom-fill" src={zoom.photo} alt="" width={8} height={6} />
-              <Image className="zoom-whole" src={zoom.photo} alt="" fill sizes={zoomSizes(640, 100)} />
+              <Image className="zoom-fill" src={zoom.photo} alt="" width={8} height={6} loading="eager" />
+              <Image className="zoom-whole" src={zoom.photo} alt="" fill loading="eager" sizes={zoomSizes(640, 100)} />
             </div>
             <button type="button" className="icon-btn" onClick={() => close(zoomRef.current!)} aria-label={t.close}>{Icon.close}</button>
             <Row it={{ ...zoom, photo: null }} compact={false} t={t} />

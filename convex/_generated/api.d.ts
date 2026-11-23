@@ -11,6 +11,7 @@
 import type * as admin from "../admin.js";
 import type * as auth from "../auth.js";
 import type * as crons from "../crons.js";
+import type * as lib_credentialDisplay from "../lib/credentialDisplay.js";
 import type * as lib_password from "../lib/password.js";
 import type * as loyalty from "../loyalty.js";
 import type * as loyaltyRules from "../loyaltyRules.js";
@@ -28,6 +29,7 @@ declare const fullApi: ApiFromModules<{
   admin: typeof admin;
   auth: typeof auth;
   crons: typeof crons;
+  "lib/credentialDisplay": typeof lib_credentialDisplay;
   "lib/password": typeof lib_password;
   loyalty: typeof loyalty;
   loyaltyRules: typeof loyaltyRules;

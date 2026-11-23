@@ -4,7 +4,7 @@ export function customerLanguage(value?: string): CustomerLanguage {
 }
 export const customerCopy = {
   ka: {
-    terms: "პირობები",
+    terms: "პირობები და კონფიდენციალურობა",
     termsEmpty: "პირობები ჯერ არ არის დამატებული.",
     cardHeading: "ლოიალურობის ბარათი",
     coffeeItem: "ყავა",
@@ -32,7 +32,7 @@ export const customerCopy = {
     creating: "ბარათი იქმნება…",
     loading: "იტვირთება…",
     connection: "კავშირი ვერ მოხერხდა. სცადე ხელახლა.",
-    unavailable: "ბარათის შექმნა ჯერ არ არის ხელმისაწვდომი.",
+    unavailable: "ლოიალურობის ბარათი ხელმისაწვდომი არ არის.",
     failed: "ბარათი ვერ შეიქმნა. სცადე ხელახლა.",
     title: "შენი ბარათი",
     card: "ლოიალობის ბარათი",
@@ -47,7 +47,7 @@ export const customerCopy = {
     language: "ენის შეცვლა",
   },
   en: {
-    terms: "Terms",
+    terms: "Terms & privacy notice",
     termsEmpty: "Terms have not been added yet.",
     cardHeading: "Loyalty card",
     coffeeItem: "Coffee",
@@ -74,7 +74,7 @@ export const customerCopy = {
     creating: "Creating your card…",
     loading: "Loading…",
     connection: "Couldn’t connect. Please try again.",
-    unavailable: "Card creation isn’t available yet.",
+    unavailable: "No loyalty card available.",
     failed: "Couldn’t create your card. Please try again.",
     title: "Your loyalty card",
     card: "Loyalty card",
@@ -89,7 +89,7 @@ export const customerCopy = {
     language: "Change language",
   },
   ru: {
-    terms: "Условия",
+    terms: "Условия и конфиденциальность",
     termsEmpty: "Условия пока не добавлены.",
     cardHeading: "Карта лояльности",
     coffeeItem: "Кофе",
@@ -117,7 +117,7 @@ export const customerCopy = {
     creating: "Создаём карту…",
     loading: "Загрузка…",
     connection: "Не удалось подключиться. Попробуйте ещё раз.",
-    unavailable: "Создание карты пока недоступно.",
+    unavailable: "Карта лояльности недоступна.",
     failed: "Не удалось создать карту. Попробуйте ещё раз.",
     title: "Ваша карта лояльности",
     card: "Карта лояльности",

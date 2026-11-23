@@ -2,8 +2,10 @@
 import { useEffect, useState } from "react";
 export default function Scanner({
   onScan,
+  unavailableMessage,
 }: {
   onScan: (value: string) => void;
+  unavailableMessage?: string;
 }) {
   const [error, setError] = useState("");
   useEffect(() => {
@@ -31,7 +33,8 @@ export default function Scanner({
       } catch {
         if (!disposed)
           setError(
-            "Camera unavailable. Allow camera access over HTTPS, or enter the card identifier below.",
+            unavailableMessage ??
+              "Camera unavailable. Allow camera access over HTTPS, or enter the card identifier below.",
           );
       }
     });
@@ -39,7 +42,7 @@ export default function Scanner({
       disposed = true;
       if (scanner?.isScanning) void scanner.stop().catch(() => {});
     };
-  }, [onScan]);
+  }, [onScan, unavailableMessage]);
   return (
     <>
       <div id="loyalty-reader" />

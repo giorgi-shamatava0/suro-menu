@@ -94,13 +94,36 @@ try {
     deviceScaleFactor: 1,
     mobile: true,
   });
+  await send("Page.navigate", { url: `${origin}/ka` });
+  await waitFor(
+    `document.querySelector('.hero .logo') && getComputedStyle(document.querySelector('.hero .canopy')).position==='absolute'`,
+  );
+  assert.equal(
+    await evaluate(`document.documentElement.scrollWidth>innerWidth+1`),
+    false,
+  );
+  assert.equal(
+    await evaluate(
+      `Promise.all(Array.from(document.querySelectorAll('link[rel="stylesheet"]')).map(l=>fetch(l.href).then(r=>r.ok))).then(results=>results.every(Boolean))`,
+    ),
+    true,
+    "A stylesheet is missing",
+  );
+  await new Promise((r) => setTimeout(r, 2500));
+  const homeShot = await send("Page.captureScreenshot", { format: "png" });
+  await writeFile(
+    ".impeccable/review/home-lan-390.png",
+    Buffer.from(homeShot.data, "base64"),
+  );
   await send("Page.navigate", { url: `${origin}/loyalty` });
   await waitFor(`document.querySelector('.activation-consent input')`);
   await waitFor(
     `Object.keys(document.querySelector('.activation-consent input')).some(k=>k.startsWith('__reactProps'))`,
   );
   assert.equal(
-    await evaluate(`document.querySelector('.customer-join button').disabled`),
+    await evaluate(
+      `document.querySelector('.customer-join > .loyalty-primary').disabled`,
+    ),
     true,
   );
   const unconsented = await evaluate(
@@ -108,14 +131,44 @@ try {
   );
   assert.equal(unconsented, 400);
   await evaluate(
-    `document.querySelector('.activation-consent input').click();document.querySelector('.customer-join button').click()`,
+    `document.querySelector('.activation-consent input').click();document.querySelector('.customer-join > .loyalty-primary').click()`,
   );
   await waitFor(
-    `location.pathname.startsWith('/c/') && document.querySelector('.stage-thanks')`,
+    `location.pathname.startsWith('/c/') && document.querySelector('.stage-empty')`,
     "Signup did not reach unique card URL",
+  );
+  const emptyTime = Date.now();
+  assert.equal(
+    await evaluate(
+      `document.querySelector('.stamp-card-total').innerText.replace(/\\s/g,'')`,
+    ),
+    "0/8",
+  );
+  assert.equal(
+    await evaluate(
+      `document.querySelectorAll('.live-stamp-card [data-filled="true"]').length`,
+    ),
+    0,
+  );
+  await waitFor(`document.querySelector('.stage-thanks')`);
+  assert.ok(
+    Date.now() - emptyTime >= 1700,
+    "Empty card must be visible for two seconds",
   );
   await waitFor(`document.querySelector('.stage-stamp')`);
   const stampTime = Date.now();
+  assert.equal(
+    await evaluate(`document.querySelectorAll('.welcome-celebration').length`),
+    0,
+    "First stamp must stay visible on the card",
+  );
+  assert.equal(
+    await evaluate(
+      `document.querySelectorAll('.live-stamp-card [data-stamping="true"] .stamp-impression').length`,
+    ),
+    1,
+  );
+
   assert.equal(
     await evaluate(
       `document.querySelector('.stamp-card-total').innerText.replace(/\\s/g,'')`,
@@ -132,7 +185,61 @@ try {
     Date.now() - stampTime >= 2700,
     "Gift did not wait three seconds after first stamp",
   );
+  await waitFor(`document.querySelector('.stage-shuffle')`);
+  for (let frame = 0; frame < 14; frame++) {
+    assert.equal(
+      await evaluate(
+        `Array.from(document.querySelectorAll('.welcome-cups button')).every(el => {const r=el.getBoundingClientRect();return r.left>=0 && r.right<=innerWidth && r.top>=0 && r.bottom<=innerHeight})`,
+      ),
+      true,
+      "Shuffling cups escaped viewport",
+    );
+    await new Promise((r) => setTimeout(r, 100));
+  }
   await waitFor(`document.querySelector('.stage-pick')`);
+  assert.equal(
+    await evaluate(
+      `Array.from(document.querySelectorAll('.cup-model')).every(img=>img.complete&&img.naturalWidth>0)`,
+    ),
+    true,
+    "Cup models did not load",
+  );
+  assert.equal(
+    await evaluate(
+      `getComputedStyle(document.querySelector('.welcome-celebration')).backgroundColor`,
+    ),
+    "rgba(0, 0, 0, 0)",
+  );
+  assert.equal(
+    await evaluate(
+      `getComputedStyle(document.querySelector('.customer-header')).visibility`,
+    ),
+    "hidden",
+  );
+  assert.equal(
+    await evaluate(
+      `getComputedStyle(document.querySelector('.download-card')).visibility`,
+    ),
+    "hidden",
+  );
+  assert.equal(
+    await evaluate(
+      `getComputedStyle(document.querySelector('.welcome-visual h2')).color`,
+    ),
+    "rgb(227, 200, 125)",
+  );
+  assert.ok(
+    await evaluate(
+      `parseFloat(getComputedStyle(document.querySelector('.welcome-visual h2')).fontSize)>=44`,
+    ),
+  );
+  await new Promise((r) => setTimeout(r, 600));
+  const cupsShot = await send("Page.captureScreenshot", { format: "png" });
+  await writeFile(
+    ".impeccable/review/welcome-cups-390.png",
+    Buffer.from(cupsShot.data, "base64"),
+  );
+
   assert.equal(
     await evaluate(
       `document.querySelectorAll('.welcome-cups button:not(:disabled)').length`,
@@ -156,6 +263,24 @@ try {
     `!document.querySelector('.welcome-celebration') && document.querySelector('.loyalty-qr')?.complete`,
   );
   const path = await evaluate("location.pathname");
+  const backgroundBefore = await evaluate(
+    `(()=>{const r=document.querySelector('.customer-leaf-right').getBoundingClientRect();return {top:r.top,left:r.left,height:r.height}})()`,
+  );
+  await evaluate(`document.querySelector('.customer-page').scrollTop=200`);
+  assert.deepEqual(
+    await evaluate(
+      `(()=>{const r=document.querySelector('.customer-leaf-right').getBoundingClientRect();return {top:r.top,left:r.left,height:r.height}})()`,
+    ),
+    backgroundBefore,
+    "Background moved when card content scrolled",
+  );
+  assert.equal(
+    await evaluate(`window.scrollY`),
+    0,
+    "Document behind card scrolled",
+  );
+  await evaluate(`document.querySelector('.customer-page').scrollTop=0`);
+
   assert.equal(
     await evaluate(`document.documentElement.scrollWidth>innerWidth+1`),
     false,
@@ -232,6 +357,51 @@ try {
   await writeFile(
     ".impeccable/review/reworked-card-1440.png",
     Buffer.from(desktop.data, "base64"),
+  );
+  for (const [width, height] of [
+    [320, 568],
+    [844, 390],
+    [1366, 768],
+  ]) {
+    await send("Emulation.setDeviceMetricsOverride", {
+      width,
+      height,
+      deviceScaleFactor: 1,
+      mobile: width < 900,
+    });
+    await send("Page.navigate", { url: origin + path + "?welcome=1" });
+    await waitFor(`document.querySelector('.stage-empty')`);
+    await waitFor(`document.querySelector('.stage-shuffle')`);
+    for (let frame = 0; frame < 14; frame++) {
+      assert.equal(
+        await evaluate(
+          `Array.from(document.querySelectorAll('.welcome-cups button')).every(el=>{const r=el.getBoundingClientRect();return r.left>=0&&r.right<=innerWidth&&r.top>=0&&r.bottom<=innerHeight})`,
+        ),
+        true,
+        `Cups overflow at ${width}x${height}`,
+      );
+      await new Promise((r) => setTimeout(r, 100));
+    }
+    await waitFor(`document.querySelector('.stage-pick')`);
+    await new Promise((r) => setTimeout(r, 600));
+    const shot = await send("Page.captureScreenshot", { format: "png" });
+    await writeFile(
+      `.impeccable/review/welcome-cups-${width}.png`,
+      Buffer.from(shot.data, "base64"),
+    );
+    await evaluate(`document.querySelector('.welcome-cups button').click()`);
+    await waitFor(`document.querySelector('.stage-won')`);
+    assert.equal(
+      await evaluate(
+        `document.querySelectorAll('.live-stamp-card [data-stamping="true"] .stamp-impression').length`,
+      ),
+      1,
+    );
+    await evaluate(`document.querySelector('.stage-won button').click()`);
+    await waitFor(`!document.querySelector('.welcome-card-message')`);
+  }
+  console.log(
+    "Cup shuffle, reveal and card stamping fit 320x568, 390x844, 844x390 and 1366x768",
   );
   const manifest = await evaluate(
     `fetch(document.querySelector('link[rel=manifest]').href).then(r=>r.json())`,

@@ -8,14 +8,20 @@ export async function GET(
   return Response.json(
     {
       id: `/c/${code}`,
-      name: "Suro",
-      short_name: "Suro",
+      name: "Suro Loyalty Card",
+      short_name: "Suro Loyalty Card",
       start_url: `/c/${code}`,
       scope: "/",
       display: "standalone",
       background_color: "#0f1311",
       theme_color: "#244c3b",
       icons: [
+        {
+          src: "/icon-192.png",
+          sizes: "192x192",
+          type: "image/png",
+          purpose: "any",
+        },
         {
           src: "/icon.png",
           sizes: "512x512",

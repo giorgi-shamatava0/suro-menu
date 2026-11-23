@@ -1,23 +1,18 @@
+import { Inter, Noto_Sans_Georgian } from "next/font/google";
+import "./staff.css";
+const ui = Inter({ subsets: ["latin", "cyrillic"], variable: "--f-staff-ui" });
+const ka = Noto_Sans_Georgian({
+  subsets: ["georgian"],
+  variable: "--f-staff-ka",
+});
 export default function StaffLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
   return (
-    <div lang="en">
-      <header className="loyalty-header">
-        <a href="/loyalty" aria-label="Suro loyalty">
-          <span className="loyalty-mark" />
-        </a>
-        <nav aria-label="Main">
-          <a href="/ka">Menu</a>
-          <a href="/loyalty">Your card</a>
-        </nav>
-      </header>
+    <div className={`scanner-shell ${ui.variable} ${ka.variable}`}>
       {children}
-      <footer className="loyalty-footer">
-        Suro · 12 Tsotne Dadiani St, Tbilisi
-      </footer>
     </div>
   );
 }

@@ -11,6 +11,7 @@ import {
 import { api, internal } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
 import { requireAdmin } from "./auth";
+import { encryptCredential, decryptCredential } from "./lib/credentialDisplay";
 import { hashPassword, verifyPassword } from "./lib/password";
 import { awardBalance, calendarMonths, expired } from "./loyaltyRules";
 
@@ -198,8 +199,7 @@ async function view(
     programs
       .filter(
         (p) =>
-          !["draft", "archived"].includes(p.status) ||
-          balances.some((b) => b.programId === p._id),
+          p.status === "active" || balances.some((b) => b.programId === p._id),
       )
       .map(async (p) => {
         const b = balances.find((b) => b.programId === p._id);
@@ -223,7 +223,7 @@ async function view(
           stamps = lots.reduce((n, l) => n + l.remaining, 0);
           expiresAt = lots[0]?.expiresAt;
         }
-        const rewardItemId = rules ? rules.rewardItemId : p.rewardItemId;
+        const rewardItemId = rules?.rewardItemId ?? p.rewardItemId;
         const rewardItem = rewardItemId ? await ctx.db.get(rewardItemId) : null;
         return {
           ...p,
@@ -231,7 +231,10 @@ async function view(
           rewardNames: rewardItem?.name ??
             rules?.rewardNames ??
             p.rewardNames ?? { ka: rules?.reward ?? p.reward },
-          rewardImageUrl: null,
+          rewardImageUrl: rewardItem?.photo
+            ? await ctx.storage.getUrl(rewardItem.photo)
+            : null,
+          rewardDescriptions: rewardItem?.description,
           stamps,
           expiresAt,
           threshold: rules?.threshold ?? 10,
@@ -252,6 +255,10 @@ async function view(
       return {
         ...r,
         rewardNames: item?.name ?? version?.rewardNames ?? { ka: r.label },
+        rewardImageUrl: item?.photo
+          ? await ctx.storage.getUrl(item.photo)
+          : null,
+        rewardDescriptions: item?.description,
         status:
           r.status === "available" && expired(r.expiresAt, now)
             ? "expired"
@@ -266,6 +273,7 @@ async function view(
     publicCode: m.publicCode,
     serial: m._id,
     offers: [],
+    createdAt: m.createdAt ?? m._creationTime,
     updatedAt: m.updatedAt,
     programs: progress,
     rewards,
@@ -301,9 +309,132 @@ export const enrollmentPreview = query({
       return null;
     return {
       threshold: rules.threshold,
+      welcomeStamps: p.welcomeStamps ?? 2,
       reward: rules.reward,
       rewardNames: rules.rewardNames ?? p.rewardNames,
     };
+  },
+});
+
+const SIGNUP_HOUR = 3600_000;
+const SIGNUP_FREE_LIMIT = 50;
+async function signupHour(ctx: QueryCtx | MutationCtx) {
+  const now = Date.now();
+  const row = await ctx.db
+    .query("loyaltyLimits")
+    .withIndex("by_key", (q) => q.eq("key", "signup:hourly"))
+    .unique();
+  return {
+    row,
+    count: row && row.until > now ? row.count : 0,
+    resetsAt: (Math.floor(now / SIGNUP_HOUR) + 1) * SIGNUP_HOUR,
+  };
+}
+async function pinAttemptState(
+  ctx: MutationCtx,
+  bucket: string,
+  secret: string,
+) {
+  const read = async (key: string, max: number, duration: number) => {
+    const row = await ctx.db
+      .query("loyaltyLimits")
+      .withIndex("by_key", (q) => q.eq("key", key))
+      .unique();
+    const active = row && row.until > Date.now();
+    return {
+      key,
+      row,
+      count: active ? row.count : 0,
+      until: active ? row.until : Date.now() + duration,
+      max,
+    };
+  };
+  return Promise.all([
+    read(`signup:pin:browser:${secret}`, 4, SIGNUP_HOUR),
+    read(`signup:pin:network:${bucket}`, 30, 60_000),
+  ]);
+}
+function samePinDigest(a: string, b: string) {
+  let different = a.length ^ b.length;
+  for (let i = 0; i < b.length; i++)
+    different |= (a.charCodeAt(i) || 0) ^ b.charCodeAt(i);
+  return different === 0;
+}
+export const setSignupPin = action({
+  args: { token: v.string(), pin: v.string() },
+  handler: async (ctx, a) => {
+    await ctx.runQuery(internal.loyalty.authorize, { token: a.token });
+    if (!/^\d{6}$/.test(a.pin)) fail("Use a six-digit PIN");
+    const admission = process.env.LOYALTY_ADMISSION_SECRET;
+    if (!admission) fail("Enrollment is not configured");
+    const encoder = new TextEncoder();
+    const key = await crypto.subtle.importKey(
+      "raw",
+      encoder.encode(admission),
+      { name: "HMAC", hash: "SHA-256" },
+      false,
+      ["sign"],
+    );
+    const bytes = new Uint8Array(
+      await crypto.subtle.sign(
+        "HMAC",
+        key,
+        encoder.encode(`signup-pin:${a.pin}`),
+      ),
+    );
+    const pinDigest = Array.from(bytes, (byte) =>
+      byte.toString(16).padStart(2, "0"),
+    ).join("");
+    await ctx.runMutation(internal.loyalty.storeSignupPin, {
+      token: a.token,
+      pinDigest,
+      displaySecret: await encryptCredential(a.pin, "pin"),
+    });
+  },
+});
+export const storeSignupPin = internalMutation({
+  args: {
+    token: v.string(),
+    pinDigest: v.string(),
+    displaySecret: v.optional(v.string()),
+  },
+  handler: async (ctx, a) => {
+    await staff(ctx, a.token, true);
+    const row = await ctx.db.query("loyaltySignupSettings").first();
+    const data = {
+      pinDigest: a.pinDigest,
+      displaySecret: a.displaySecret,
+      updatedAt: Date.now(),
+    };
+    if (row) await ctx.db.patch(row._id, data);
+    else await ctx.db.insert("loyaltySignupSettings", data);
+    await ctx.db.insert("loyaltyAudit", {
+      actor: "administrator",
+      event: "signup.pin_changed",
+      detail: "Staff signup PIN changed",
+      at: Date.now(),
+    });
+  },
+});
+
+// Initial setup through the authenticated Convex CLI; later changes use admin settings.
+export const initializeSignupPin = internalMutation({
+  args: { pinDigest: v.string() },
+  handler: async (ctx, a) => {
+    if (!/^[a-f0-9]{64}$/.test(a.pinDigest)) fail("Invalid PIN digest");
+    if (await ctx.db.query("loyaltySignupSettings").first())
+      fail("Signup PIN already configured");
+    const now = Date.now();
+    await ctx.db.insert("loyaltySignupSettings", {
+      pinDigest: a.pinDigest,
+      updatedAt: now,
+    });
+    await ctx.db.insert("loyaltyAudit", {
+      actor: "administrator",
+      event: "signup.pin_changed",
+      detail: "Initial staff signup PIN configured",
+      at: now,
+    });
   },
 });
 
@@ -312,6 +443,7 @@ export const enroll = mutation({
   args: {
     admission: v.string(),
     bucket: v.string(),
+    pinDigest: v.optional(v.string()),
     secret: v.string(),
     qr: v.string(),
   },
@@ -324,7 +456,9 @@ export const enroll = mutation({
     if (
       !/^[a-f0-9]{64}$/.test(a.secret) ||
       !/^[a-f0-9]{64}$/.test(a.qr) ||
-      a.bucket.length > 100
+      !a.bucket ||
+      a.bucket.length > 100 ||
+      (a.pinDigest !== undefined && !/^[a-f0-9]{64}$/.test(a.pinDigest))
     )
       fail("Invalid enrollment");
     const existing = await ctx.db
@@ -335,24 +469,109 @@ export const enroll = mutation({
       fail("This card was revoked. Please ask the café team.");
     if (existing)
       return {
+        ok: true as const,
         secret: existing.secret,
         code: existing.publicCode ?? existing.qr,
       };
-    await limit(ctx, `signup:${a.bucket}`, 5, 3600_000);
-    await limit(ctx, "signup:global", 200, 3600_000);
+    const browserAttempts = await ctx.db
+      .query("loyaltyLimits")
+      .withIndex("by_key", (q) => q.eq("key", `signup:pin:browser:${a.secret}`))
+      .unique();
+    if (
+      browserAttempts &&
+      browserAttempts.count >= 4 &&
+      browserAttempts.until > Date.now()
+    )
+      return {
+        ok: false as const,
+        reason: "STAFF_PIN_LOCKED" as const,
+        resetsAt: browserAttempts.until,
+      };
+    const hour = await signupHour(ctx);
+    let staffApproved = false;
+    if (hour.count >= SIGNUP_FREE_LIMIT) {
+      if (!a.pinDigest)
+        return {
+          ok: false as const,
+          reason: "STAFF_PIN_REQUIRED" as const,
+          resetsAt: hour.resetsAt,
+        };
+      const settings = await ctx.db.query("loyaltySignupSettings").first();
+      if (!settings)
+        return {
+          ok: false as const,
+          reason: "STAFF_PIN_NOT_CONFIGURED" as const,
+          resetsAt: hour.resetsAt,
+        };
+      const attempts = await pinAttemptState(ctx, a.bucket, a.secret);
+      const lockedUntil = Math.max(
+        0,
+        ...attempts
+          .filter((row) => row.count >= row.max)
+          .map((row) => row.until),
+      );
+      if (lockedUntil > Date.now())
+        return {
+          ok: false as const,
+          reason: "STAFF_PIN_LOCKED" as const,
+          resetsAt: lockedUntil,
+        };
+      if (!samePinDigest(a.pinDigest, settings.pinDigest)) {
+        // Return instead of throwing: failed-attempt counters must commit.
+        let blockedUntil = 0;
+        for (const entry of attempts) {
+          const count = entry.count + 1;
+          const until =
+            count >= entry.max && entry.key.startsWith("signup:pin:browser:")
+              ? Date.now() + SIGNUP_HOUR
+              : entry.until;
+          if (count >= entry.max) blockedUntil = Math.max(blockedUntil, until);
+          const data = { count, until };
+          if (entry.row) await ctx.db.patch(entry.row._id, data);
+          else
+            await ctx.db.insert("loyaltyLimits", { key: entry.key, ...data });
+        }
+        if (blockedUntil)
+          return {
+            ok: false as const,
+            reason: "STAFF_PIN_LOCKED" as const,
+            resetsAt: blockedUntil,
+          };
+        return {
+          ok: false as const,
+          reason: "STAFF_PIN_INVALID" as const,
+          resetsAt: hour.resetsAt,
+        };
+      }
+      staffApproved = true;
+    }
+    const now = Date.now();
+    const counter = { count: hour.count + 1, until: hour.resetsAt };
+    if (hour.row) await ctx.db.patch(hour.row._id, counter);
+    else
+      await ctx.db.insert("loyaltyLimits", {
+        key: "signup:hourly",
+        ...counter,
+      });
     const code = shortCode();
     const memberId = await ctx.db.insert("loyaltyMembers", {
-      consentedAt: Date.now(),
+      createdAt: now,
+      consentedAt: now,
       consentVersion: "2026-11-23",
       qr: a.qr,
       publicCode: code,
       secret: a.secret,
       revoked: false,
-      updatedAt: Date.now(),
+      updatedAt: now,
+    });
+    await ctx.db.insert("loyaltyAudit", {
+      actor: "system",
+      event: "member.created",
+      detail: `${memberId}${staffApproved ? " (staff PIN)" : ""}`,
+      at: now,
     });
     await increment(ctx, { members: 1 });
     // Welcome awards are committed once with membership creation, never on page visits.
-    const now = Date.now();
     const programs = await ctx.db.query("loyaltyPrograms").collect();
     const program = programs.find(
       (p) =>
@@ -381,13 +600,12 @@ export const enroll = mutation({
           memberId,
           programId: program._id,
           versionId: rules._id,
-          stamps: 2,
+          stamps: program.welcomeStamps ?? 2,
           expiresAt,
         });
-        for (const [index, reference] of [
-          "First visit",
-          "Welcome gift",
-        ].entries()) {
+        const welcomeStamps = program.welcomeStamps ?? 2;
+        for (let index = 0; index < welcomeStamps; index++) {
+          const reference = index === 0 ? "First visit" : "Welcome gift";
           const key = `welcome:${memberId}:${index}`;
           await ctx.db.insert("loyaltyLedger", {
             memberId,
@@ -407,11 +625,15 @@ export const enroll = mutation({
               key,
             });
         }
-        await ctx.db.patch(memberId, { lastActiveAt: now, welcomeProgramId: program._id });
-        await increment(ctx, { stampsIssued: 2 });
+        await ctx.db.patch(memberId, {
+          lastActiveAt: now,
+          welcomeProgramId: program._id,
+          welcomeStamps,
+        });
+        await increment(ctx, { stampsIssued: welcomeStamps });
       }
     }
-    return { secret: a.secret, code };
+    return { ok: true as const, secret: a.secret, code };
   },
 });
 export const card = query({
@@ -440,6 +662,26 @@ export const lookup = mutation({
     };
   },
 });
+async function issuedRewards(ctx: QueryCtx, ids: Id<"loyaltyRewards">[]) {
+  const rewards = await Promise.all(
+    ids.map(async (id) => {
+      const reward = await ctx.db.get(id);
+      if (!reward) return null;
+      const rules = await ctx.db.get(reward.versionId);
+      return {
+        id: reward._id,
+        label: reward.label,
+        names: rules?.rewardNames,
+        status:
+          reward.status === "available" && expired(reward.expiresAt, Date.now())
+            ? "expired"
+            : reward.status,
+        at: reward.earnedAt,
+      };
+    }),
+  );
+  return rewards.filter((r) => r !== null);
+}
 export const issue = mutation({
   args: {
     token: v.string(),
@@ -467,7 +709,18 @@ export const issue = mutation({
         prior.reference !== reference
       )
         fail("Transaction key was already used");
-      return;
+      const balance = await ctx.db
+        .query("loyaltyBalances")
+        .withIndex("by_pair", (q) =>
+          q.eq("memberId", m._id).eq("programId", a.programId),
+        )
+        .unique();
+      return {
+        code: m.publicCode ?? m.qr,
+        stamps: balance?.stamps ?? 0,
+        expiresAt: balance?.expiresAt,
+        rewards: await issuedRewards(ctx, prior.rewardIds ?? []),
+      };
     }
     const p = await ctx.db.get(a.programId);
     const now = Date.now();
@@ -574,22 +827,27 @@ export const issue = mutation({
       stampsIssued: a.count,
       rewardsEarned: result.rewards,
     });
+    const rewardIds: Id<"loyaltyRewards">[] = [];
     for (let i = 0; i < result.rewards; i++)
-      await ctx.db.insert("loyaltyRewards", {
-        memberId: m._id,
-        programId: p._id,
-        versionId: rules._id,
-        label: rules.reward,
-        status: "available",
-        earnedAt: now,
-        expiresAt: rules.rewardDays
-          ? now + rules.rewardDays * 86400_000
-          : undefined,
-      });
+      rewardIds.push(
+        await ctx.db.insert("loyaltyRewards", {
+          memberId: m._id,
+          programId: p._id,
+          versionId: rules._id,
+          label: rules.reward,
+          status: "available",
+          earnedAt: now,
+          expiresAt: rules.rewardDays
+            ? Math.min(now + rules.rewardDays * 86400_000, p.endsAt ?? Infinity)
+            : p.endsAt,
+        }),
+      );
     await ctx.db.insert("loyaltyLedger", {
       memberId: m._id,
       programId: p._id,
       kind: "award",
+      rewardIds,
+      earnedReward: rewardIds.length > 0,
       count: a.count,
       at: now,
       actor,
@@ -597,6 +855,12 @@ export const issue = mutation({
       reference,
     });
     await touchCard(ctx, m._id);
+    return {
+      code: m.publicCode ?? m.qr,
+      stamps: result.stamps,
+      expiresAt,
+      rewards: await issuedRewards(ctx, rewardIds),
+    };
   },
 });
 export const redeem = mutation({
@@ -716,8 +980,13 @@ export const dashboard = query({
       programs: await ctx.db.query("loyaltyPrograms").collect(),
       versions: await ctx.db.query("loyaltyVersions").collect(),
       staff: (await ctx.db.query("loyaltyStaff").collect()).map(
-        ({ hash: _hash, ...s }) => s,
+        ({ hash: _hash, displaySecret: _displaySecret, ...s }) => s,
       ),
+      signupProtection: {
+        pinConfigured: !!(await ctx.db.query("loyaltySignupSettings").first()),
+        freeLimit: SIGNUP_FREE_LIMIT,
+        count: (await signupHour(ctx)).count,
+      },
       brand: await ctx.db.query("loyaltyBrand").first(),
       audit: await ctx.db
         .query("loyaltyAudit")
@@ -738,6 +1007,7 @@ export const saveProgram = mutation({
     rewardImage: v.optional(v.id("_storage")),
     rewardItemId: v.optional(v.id("items")),
     threshold: v.number(),
+    welcomeStamps: v.optional(v.number()),
     expiry: v.string(),
     months: v.number(),
     rewardDays: v.optional(v.number()),
@@ -782,9 +1052,22 @@ export const saveProgram = mutation({
       fail("Campaign expiry needs an end date");
     if (a.startsAt && a.endsAt && a.startsAt >= a.endsAt)
       fail("End must follow start");
+    if (
+      a.welcomeStamps !== undefined &&
+      (![4, 6, 8, 10].includes(a.threshold) ||
+        !Number.isInteger(a.welcomeStamps) ||
+        a.welcomeStamps < 1 ||
+        a.welcomeStamps >= a.threshold ||
+        !a.endsAt ||
+        a.endsAt <= Date.now())
+    )
+      fail(
+        "Choose a future end date and fewer welcome stamps than the card total",
+      );
     const version = (p?.version ?? 0) + 1;
     const data = {
       name,
+      welcomeStamps: a.welcomeStamps ?? p?.welcomeStamps,
       description: a.description.trim(),
       products: a.products.trim(),
       reward,
@@ -799,6 +1082,19 @@ export const saveProgram = mutation({
       ? p._id
       : await ctx.db.insert("loyaltyPrograms", { ...data, status: "draft" });
     if (p) await ctx.db.patch(id, data);
+    if (p && a.welcomeStamps !== undefined) {
+      for (const old of await ctx.db
+        .query("loyaltyVersions")
+        .withIndex("by_program", (q) => q.eq("programId", id))
+        .collect())
+        await ctx.db.patch(old._id, {
+          expiry: "campaign",
+          campaignEndAt: a.endsAt,
+        });
+      for (const balance of await ctx.db.query("loyaltyBalances").collect())
+        if (balance.programId === id)
+          await ctx.db.patch(balance._id, { expiresAt: a.endsAt });
+    }
     await ctx.db.insert("loyaltyVersions", {
       programId: id,
       version,
@@ -833,8 +1129,26 @@ export const setStatus = mutation({
       fail("Invalid status");
     const p = await ctx.db.get(a.id);
     if (!p) fail("Program missing");
+    if (a.status === "active" && expired(p.endsAt, Date.now()))
+      fail("Choose a future end date before activating");
     if (a.status === "scheduled" && (!p.startsAt || p.startsAt <= Date.now()))
       fail("Set a future start date first");
+    if (a.status === "active") {
+      for (const other of await ctx.db.query("loyaltyPrograms").collect()) {
+        if (
+          other._id !== a.id &&
+          ["active", "scheduled"].includes(other.status)
+        ) {
+          await ctx.db.patch(other._id, { status: "paused" });
+          await ctx.db.insert("loyaltyAudit", {
+            actor,
+            event: "program.status",
+            detail: `${other.name}: paused (another card activated)`,
+            at: Date.now(),
+          });
+        }
+      }
+    }
     await ctx.db.patch(a.id, { status: a.status });
     await ctx.db.insert("loyaltyAudit", {
       actor,
@@ -875,12 +1189,18 @@ export const createSession = internalMutation({
   },
 });
 export const login = action({
-  args: { password: v.string() },
+  args: { password: v.string(), username: v.optional(v.string()) },
   handler: async (ctx, a): Promise<string> => {
     await ctx.runMutation(internal.loyalty.loginAttempt, {});
-    if (a.password.length < 12 || a.password.length > 200)
-      fail("Invalid staff password");
-    const rows = await ctx.runQuery(internal.loyalty.staffRecords, {});
+    if (
+      (a.username !== undefined && a.username !== "staff") ||
+      a.password.length < 8 ||
+      a.password.length > 200
+    )
+      fail("Invalid staff credentials");
+    const activeRows = await ctx.runQuery(internal.loyalty.staffRecords, {});
+    const shared = activeRows.find((p) => p.name === "staff");
+    const rows = shared ? [shared] : activeRows;
     const matches = [];
     for (const person of rows)
       if (await verifyPassword(a.password, person.hash)) matches.push(person);
@@ -1005,6 +1325,9 @@ export const maintenance = internalMutation({
       ) {
         await ctx.db.patch(p._id, { status: "ended" });
       } else if (p.status === "scheduled" && p.startsAt && p.startsAt <= now) {
+        for (const other of await ctx.db.query("loyaltyPrograms").collect())
+          if (other._id !== p._id && other.status === "active")
+            await ctx.db.patch(other._id, { status: "paused" });
         await ctx.db.patch(p._id, { status: "active" });
       }
     }
@@ -1083,6 +1406,7 @@ export const publicCard = query({
       revoked: false,
       publicCode: m.publicCode,
       welcomeProgramId: m.welcomeProgramId,
+      welcomeStamps: m.welcomeStamps ?? 2,
       brand: { name: data.brand.name, color: data.brand.color },
       updatedAt: data.updatedAt,
       terms: data.terms,
@@ -1092,6 +1416,7 @@ export const publicCard = query({
         reward: p.reward,
         rewardNames: p.rewardNames,
         rewardImageUrl: p.rewardImageUrl,
+        rewardDescriptions: p.rewardDescriptions,
         stamps: p.stamps,
         threshold: p.threshold,
         expiresAt: p.expiresAt,
@@ -1099,8 +1424,11 @@ export const publicCard = query({
       rewards: data.rewards
         .filter((r) => r.status === "available")
         .map((r) => ({
+          id: r._id,
           label: r.label,
           rewardNames: r.rewardNames,
+          rewardImageUrl: r.rewardImageUrl,
+          rewardDescriptions: r.rewardDescriptions,
           expiresAt: r.expiresAt,
         })),
       offers: [],
@@ -1149,7 +1477,7 @@ export const replaceStaffPassword = internalMutation({
     const actor = await staff(ctx, a.token, true);
     const person = await ctx.db.get(a.id);
     if (!person) fail("Staff member not found");
-    await ctx.db.patch(a.id, { hash: a.hash });
+    await ctx.db.patch(a.id, { hash: a.hash, displaySecret: undefined });
     for (const session of await ctx.db
       .query("loyaltySessions")
       .withIndex("by_staff", (q) => q.eq("staffId", a.id))
@@ -1170,9 +1498,12 @@ export const saveTerms = mutation({
   },
   handler: async (ctx, a) => {
     const actor = await staff(ctx, a.token, true);
-    for (const value of Object.values(a.terms))
+    for (const value of Object.values(a.terms)) {
+      if (!value.trim())
+        fail("Fill Georgian, English and Russian before saving");
       if (value.length > 12000)
         fail("Terms must be under 12,000 characters per language");
+    }
     const row = await ctx.db.query("loyaltyBrand").first();
     if (row) await ctx.db.patch(row._id, { terms: a.terms });
     else
@@ -1202,4 +1533,414 @@ export const publicTerms = query({
   args: {},
   handler: async (ctx) =>
     (await ctx.db.query("loyaltyBrand").first())?.terms ?? null,
+});
+
+// Passwords arrive only at the server action; the configured credential is never bundled.
+export const setSharedStaffPassword = action({
+  args: { token: v.string(), password: v.string() },
+  handler: async (ctx, a) => {
+    await ctx.runQuery(internal.loyalty.authorize, { token: a.token });
+    if (a.password.length < 8 || a.password.length > 200)
+      fail("Use a password of 8–200 characters");
+    await ctx.runMutation(internal.loyalty.configureSharedStaff, {
+      hash: await hashPassword(a.password),
+      displaySecret: await encryptCredential(a.password, "staff"),
+    });
+  },
+});
+export const configureSharedStaff = internalMutation({
+  args: { hash: v.string(), displaySecret: v.optional(v.string()) },
+  handler: async (ctx, a) => {
+    const people = await ctx.db.query("loyaltyStaff").collect();
+    const shared = people.find((p) => p.name === "staff");
+    for (const person of people) {
+      if (person._id !== shared?._id)
+        await ctx.db.patch(person._id, { active: false });
+      for (const session of await ctx.db
+        .query("loyaltySessions")
+        .withIndex("by_staff", (q) => q.eq("staffId", person._id))
+        .collect())
+        await ctx.db.delete(session._id);
+    }
+    if (shared)
+      await ctx.db.patch(shared._id, {
+        hash: a.hash,
+        displaySecret: a.displaySecret,
+        active: true,
+        role: "staff",
+      });
+    else
+      await ctx.db.insert("loyaltyStaff", {
+        name: "staff",
+        hash: a.hash,
+        displaySecret: a.displaySecret,
+        active: true,
+        role: "staff",
+      });
+    await ctx.db.insert("loyaltyAudit", {
+      actor: "administrator",
+      event: "staff.shared_password_changed",
+      detail:
+        "Shared scanner access updated; previous scanner sessions revoked",
+      at: Date.now(),
+    });
+  },
+});
+
+export const statistics = query({
+  args: {
+    token: v.string(),
+    programId: v.optional(v.id("loyaltyPrograms")),
+    from: v.number(),
+    to: v.number(),
+  },
+  handler: async (ctx, a) => {
+    await staff(ctx, a.token, true);
+    if (
+      !Number.isFinite(a.from) ||
+      !Number.isFinite(a.to) ||
+      a.from > a.to ||
+      a.to - a.from > 366 * 86400000
+    )
+      fail("Choose up to one year");
+    const selected = (id: Id<"loyaltyPrograms">) =>
+      !a.programId || id === a.programId;
+    const programs = await ctx.db.query("loyaltyPrograms").collect();
+    const members = await ctx.db.query("loyaltyMembers").collect();
+    const balances = await ctx.db.query("loyaltyBalances").collect();
+    const ledger = await ctx.db
+      .query("loyaltyLedger")
+      .withIndex("by_at", (q) => q.gte("at", a.from).lte("at", a.to))
+      .collect();
+    const rewards = await ctx.db
+      .query("loyaltyRewards")
+      .withIndex("by_earned", (q) =>
+        q.gte("earnedAt", a.from).lte("earnedAt", a.to),
+      )
+      .collect();
+    const key = (at: number) =>
+      new Date(at + 14400000).toISOString().slice(0, 10);
+    const daily = new Map<
+      string,
+      { date: string; cards: number; stamps: number; gifts: number }
+    >();
+    for (let at = a.from; at <= a.to; at += 86400000) {
+      const date = key(at);
+      daily.set(date, { date, cards: 0, stamps: 0, gifts: 0 });
+    }
+    const rows = programs.map((p) => ({
+      id: p._id,
+      name: p.name,
+      names: p.rewardNames,
+      cards: 0,
+      stamps: 0,
+      gifts: 0,
+    }));
+    // First program balance is the card's issue event; system welcome stamps are excluded.
+    for (const balance of balances) {
+      if (
+        !selected(balance.programId) ||
+        balance._creationTime < a.from ||
+        balance._creationTime > a.to
+      )
+        continue;
+      const row = rows.find((r) => r.id === balance.programId);
+      if (row) row.cards++;
+    }
+    const issued = a.programId
+      ? balances
+          .filter((b) => selected(b.programId))
+          .map((b) => ({ _creationTime: b._creationTime }))
+      : members;
+    for (const m of issued)
+      if (m._creationTime >= a.from && m._creationTime <= a.to) {
+        const day = daily.get(key(m._creationTime));
+        if (day) day.cards++;
+      }
+    for (const entry of ledger) {
+      if (
+        !selected(entry.programId) ||
+        entry.actor === "system" ||
+        entry.key.startsWith("welcome:") ||
+        entry.kind !== "award"
+      )
+        continue;
+      const day = daily.get(key(entry.at));
+      if (day) day.stamps += entry.count;
+      const row = rows.find((r) => r.id === entry.programId);
+      if (row) row.stamps += entry.count;
+    }
+    const gifts: {
+      programId: Id<"loyaltyPrograms">;
+      name: string;
+      item: string;
+      count: number;
+    }[] = [];
+    for (const reward of rewards) {
+      if (!selected(reward.programId)) continue;
+      const day = daily.get(key(reward.earnedAt));
+      if (day) day.gifts++;
+      const row = rows.find((r) => r.id === reward.programId);
+      if (row) row.gifts++;
+      const group = gifts.find(
+        (g) => g.programId === reward.programId && g.item === reward.label,
+      );
+      if (group) group.count++;
+      else
+        gifts.push({
+          programId: reward.programId,
+          name: row?.name ?? "",
+          item: reward.label,
+          count: 1,
+        });
+    }
+    const days = [...daily.values()];
+    return {
+      days,
+      cards: days.reduce((n, d) => n + d.cards, 0),
+      stamps: days.reduce((n, d) => n + d.stamps, 0),
+      gifts: days.reduce((n, d) => n + d.gifts, 0),
+      breakdown: gifts,
+      programs: rows.filter((r) => selected(r.id)),
+    };
+  },
+});
+
+export const setPoints = mutation({
+  args: {
+    token: v.string(),
+    qr: v.string(),
+    programId: v.id("loyaltyPrograms"),
+    points: v.number(),
+    key: v.string(),
+  },
+  handler: async (ctx, a) => {
+    const actor = await staff(ctx, a.token, true),
+      m = await member(ctx, a.qr);
+    clean(a.key, 100);
+    const prior = await ctx.db
+      .query("loyaltyLedger")
+      .withIndex("by_key", (q) => q.eq("key", a.key))
+      .unique();
+    if (prior) {
+      if (
+        prior.memberId !== m._id ||
+        prior.programId !== a.programId ||
+        prior.kind !== "adjust" ||
+        prior.reference !== `Set points: ${a.points}`
+      )
+        fail("Transaction key was already used");
+      return;
+    }
+    await expireMember(ctx, m._id);
+    const p = await ctx.db.get(a.programId);
+    if (!p) fail("Program missing");
+    const b = await ctx.db
+      .query("loyaltyBalances")
+      .withIndex("by_pair", (q) =>
+        q.eq("memberId", m._id).eq("programId", p._id),
+      )
+      .unique();
+    const rules = b
+      ? await ctx.db.get(b.versionId)
+      : await ctx.db
+          .query("loyaltyVersions")
+          .withIndex("by_program", (q) =>
+            q.eq("programId", p._id).eq("version", p.version),
+          )
+          .unique();
+    if (
+      !rules ||
+      !Number.isInteger(a.points) ||
+      a.points < 0 ||
+      a.points > rules.threshold
+    )
+      fail("Invalid points");
+    const now = Date.now();
+    if (a.points > 0 && expired(p.endsAt, now)) fail("Card has expired");
+    const complete = a.points === rules.threshold,
+      stamps = complete ? 0 : a.points;
+    const expiresAt =
+      stamps === 0
+        ? undefined
+        : rules.expiry === "campaign"
+          ? rules.campaignEndAt
+          : (b?.expiresAt ??
+            (rules.expiry === "never"
+              ? undefined
+              : calendarMonths(now, rules.months)));
+    const values = {
+      memberId: m._id,
+      programId: p._id,
+      versionId: rules._id,
+      stamps,
+      expiresAt,
+    };
+    const balanceId = b
+      ? b._id
+      : await ctx.db.insert("loyaltyBalances", values);
+    if (b) await ctx.db.patch(b._id, values);
+    if (rules.expiry === "fixed") {
+      for (const lot of await ctx.db
+        .query("loyaltyLots")
+        .withIndex("by_balance", (q) => q.eq("balanceId", balanceId))
+        .collect())
+        await ctx.db.delete(lot._id);
+      if (stamps)
+        await ctx.db.insert("loyaltyLots", {
+          balanceId,
+          remaining: stamps,
+          expiresAt: expiresAt!,
+          key: a.key,
+        });
+    }
+    if (complete) {
+      await ctx.db.insert("loyaltyRewards", {
+        memberId: m._id,
+        programId: p._id,
+        versionId: rules._id,
+        label: rules.reward,
+        status: "available",
+        earnedAt: now,
+        expiresAt: rules.rewardDays
+          ? Math.min(now + rules.rewardDays * 86400000, p.endsAt ?? Infinity)
+          : p.endsAt,
+      });
+      await increment(ctx, { rewardsEarned: 1 });
+    }
+    await ctx.db.insert("loyaltyLedger", {
+      memberId: m._id,
+      programId: p._id,
+      kind: "adjust",
+      count: a.points - (b?.stamps ?? 0),
+      at: now,
+      actor,
+      key: a.key,
+      reference: `Set points: ${a.points}`,
+    });
+    await ctx.db.insert("loyaltyAudit", {
+      actor,
+      event: "card.points",
+      detail: `${m._id}: ${b?.stamps ?? 0} → ${a.points}`,
+      at: now,
+    });
+    await touchCard(ctx, m._id);
+  },
+});
+
+export const credentialRecords = internalQuery({
+  args: { token: v.string() },
+  handler: async (ctx, a) => {
+    await staff(ctx, a.token, true);
+    const shared = await ctx.db
+      .query("loyaltyStaff")
+      .withIndex("by_name", (q) => q.eq("name", "staff"))
+      .unique();
+    const pin = await ctx.db.query("loyaltySignupSettings").first();
+    return { staff: shared?.active ? shared : null, pin };
+  },
+});
+export const currentCredentials = action({
+  args: { token: v.string() },
+  handler: async (
+    ctx,
+    a,
+  ): Promise<{ staffPassword: string | null; pin: string | null }> => {
+    const records = await ctx.runQuery(internal.loyalty.credentialRecords, a);
+    return {
+      staffPassword: await decryptCredential(
+        records.staff?.displaySecret,
+        "staff",
+      ),
+      pin: await decryptCredential(records.pin?.displaySecret, "pin"),
+    };
+  },
+});
+
+export const staffActivity = query({
+  args: {
+    token: v.string(),
+    kind: v.union(v.literal("history"), v.literal("rewards")),
+  },
+  handler: async (ctx, a) => {
+    const person = await staff(ctx, a.token),
+      actor = person === "administrator" ? "staff" : person;
+    const entries =
+      a.kind === "rewards"
+        ? await ctx.db
+            .query("loyaltyLedger")
+            .withIndex("by_actor_reward_at", (q) =>
+              q.eq("actor", actor).eq("earnedReward", true),
+            )
+            .order("desc")
+            .take(50)
+        : await ctx.db
+            .query("loyaltyLedger")
+            .withIndex("by_actor_kind_at", (q) =>
+              q.eq("actor", actor).eq("kind", "award"),
+            )
+            .order("desc")
+            .take(50);
+    return Promise.all(
+      entries.map(async (entry) => {
+        const [member, program, rewards] = await Promise.all([
+          ctx.db.get(entry.memberId),
+          ctx.db.get(entry.programId),
+          issuedRewards(ctx, entry.rewardIds ?? []),
+        ]);
+        return {
+          id: entry._id,
+          at: entry.at,
+          code: member?.publicCode ?? member?.qr ?? null,
+          revoked: member?.revoked ?? true,
+          points: entry.count,
+          reversed: !!entry.reversedBy,
+          program: program?.name ?? "",
+          names: program?.rewardNames,
+          rewards,
+        };
+      }),
+    );
+  },
+});
+export const backfillStaffRewardLinks = internalMutation({
+  args: {},
+  handler: async (ctx) => {
+    let updated = 0;
+    for (const entry of await ctx.db.query("loyaltyLedger").collect()) {
+      if (
+        entry.kind !== "award" ||
+        entry.actor === "system" ||
+        entry.earnedReward !== undefined
+      )
+        continue;
+      const rewards = (
+        await ctx.db
+          .query("loyaltyRewards")
+          .withIndex("by_member", (q) => q.eq("memberId", entry.memberId))
+          .collect()
+      ).filter(
+        (r) => r.programId === entry.programId && r.earnedAt === entry.at,
+      );
+      await ctx.db.patch(entry._id, {
+        rewardIds: rewards.map((r) => r._id),
+        earnedReward: rewards.length > 0,
+      });
+      updated++;
+    }
+    return updated;
+  },
+});
+
+export const scannerSession = query({
+  args: { token: v.string() },
+  handler: async (ctx, a) => {
+    const session = await ctx.db
+      .query("loyaltySessions")
+      .withIndex("by_token", (q) => q.eq("token", a.token))
+      .unique();
+    if (!session || session.expiresAt <= Date.now()) return null;
+    const person = await ctx.db.get(session.staffId);
+    return person?.active ? { expiresAt: session.expiresAt } : null;
+  },
 });

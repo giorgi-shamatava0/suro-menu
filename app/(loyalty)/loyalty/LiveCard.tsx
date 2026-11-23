@@ -1,11 +1,13 @@
 "use client";
 import { useCustomerLanguage } from "@/lib/loyalty/use-language";
 import CardActions from "./CardActions";
+import Loading from "./LoadingState";
 import WelcomeAnimation from "./WelcomeAnimation";
 import { useEffect, useState } from "react";
 import { useQuery } from "convex/react";
+import type { FunctionReturnType } from "convex/server";
 import QRCode from "qrcode";
-import StampGrid from "@/components/loyalty/StampGrid";
+import RewardCard from "./RewardCard";
 import { api } from "@/convex/_generated/api";
 import {
   customerCopy,
@@ -14,16 +16,23 @@ import {
 export default function LiveCard({
   code,
   lang: initialLang,
+  initialCard,
+  welcome = false,
 }: {
   code: string;
   lang: CustomerLanguage;
+  initialCard?: FunctionReturnType<typeof api.loyalty.publicCard>;
+  welcome?: boolean;
 }) {
   const lang = useCustomerLanguage(initialLang);
   const t = customerCopy[lang];
-  const card = useQuery(api.loyalty.publicCard, { code });
+  const liveCard = useQuery(api.loyalty.publicCard, { code });
+  const card = liveCard === undefined ? initialCard : liveCard;
   const [qr, setQr] = useState("");
   const [error, setError] = useState("");
-  const [welcomeProgress, setWelcomeProgress] = useState<number | null>(null);
+  const [welcomeProgress, setWelcomeProgress] = useState<number | null>(
+    welcome ? 0 : null,
+  );
   useEffect(() => {
     const manifest = document.createElement("link");
     manifest.rel = "manifest";
@@ -57,24 +66,7 @@ export default function LiveCard({
     const local = new Date(at + 4 * 3600_000);
     return `${String(local.getUTCDate()).padStart(2, "0")}/${String(local.getUTCMonth() + 1).padStart(2, "0")}/${String(local.getUTCFullYear()).slice(-2)}`;
   };
-  const giftLabel = (program: {
-    reward: string;
-    rewardNames?: { ka?: string; en?: string; ru?: string };
-  }) => {
-    const item =
-      program.rewardNames?.[lang] ||
-      program.rewardNames?.ka ||
-      program.rewardNames?.en ||
-      program.rewardNames?.ru ||
-      program.reward;
-    return t.rewardGift.replace("{item}", item);
-  };
-  if (card === undefined)
-    return (
-      <main className="loyalty-main" aria-live="polite">
-        {t.loading}
-      </main>
-    );
+  if (card === undefined) return <Loading />;
   if (!card || card.revoked)
     return (
       <main className="loyalty-main">
@@ -86,80 +78,100 @@ export default function LiveCard({
   return (
     <main className="loyalty-main customer-main customer-card-main" lang={lang}>
       <h1 className="card-accessible-title">{t.title}</h1>
+      {card.programs.some(
+        (p) => p.id === card.welcomeProgramId && p.stamps >= 1,
+      ) && (
+        <WelcomeAnimation
+          code={card.publicCode ?? code}
+          lang={lang}
+          welcomeStamps={card.welcomeStamps}
+          onProgress={setWelcomeProgress}
+        />
+      )}
       <div id="download-card" className="download-card">
-        <section className="loyalty-card live-stamp-card" aria-label={t.card}>
-          <div className="stamp-card-brand">
-            <span className="stamp-card-title">{t.cardHeading}</span>
-            {card.programs.length === 1 && (
-              <p
-                className="stamp-card-total"
-                aria-label={t.progress
-                  .replace("{count}", String(card.programs[0].stamps))
-                  .replace("{total}", String(card.programs[0].threshold))}
-              >
-                {welcomeProgress ?? card.programs[0].stamps}
-                <span className="stamp-card-total-slash">/</span>
-                <span className="stamp-card-total-limit">
-                  {card.programs[0].threshold}
-                </span>
-              </p>
-            )}
-          </div>
-          <div aria-live="polite">
-            {card.programs.map((p) => (
-              <div key={p.id} className="live-card-program">
-                {card.programs.length > 1 && (
-                  <div className="stamp-card-program-label">
-                    <span>{p.name}</span>
-                    <strong>
-                      {p.stamps}/{p.threshold}
-                    </strong>
-                  </div>
-                )}
-                <StampGrid
-                  threshold={p.threshold}
-                  stamps={welcomeProgress !== null && p.id===card.welcomeProgramId ? welcomeProgress : p.stamps}
-                />
-              </div>
-            ))}
-            {card.rewards.map((r, i) => (
-              <p className="loyalty-reward" key={i}>
-                {r.rewardNames?.[lang] ||
-                  r.rewardNames?.ka ||
-                  r.rewardNames?.en ||
-                  r.rewardNames?.ru ||
-                  r.label}
-              </p>
-            ))}
-          </div>
-          <footer className="stamp-card-footer">
-            <div className="stamp-card-footer-copy">
-              {card.programs.map((p) => (
-                <div key={p.id}>
-                  <p className="stamp-card-reward">{giftLabel(p)}</p>
-                </div>
-              ))}
-              {card.programs.length === 0 && (
-                <p className="stamp-card-reward">{t.empty}</p>
-              )}
-            </div>
+        {card.programs.map((p) => (
+          <RewardCard
+            key={p.id}
+            lang={lang}
+            title={card.programs.length > 1 ? p.name : t.cardHeading}
+            name={
+              p.rewardNames?.[lang] ||
+              p.rewardNames?.ka ||
+              p.rewardNames?.en ||
+              p.rewardNames?.ru ||
+              p.reward
+            }
+            description={
+              p.rewardDescriptions?.[lang] ||
+              p.rewardDescriptions?.ka ||
+              p.rewardDescriptions?.en ||
+              p.rewardDescriptions?.ru
+            }
+            image={p.rewardImageUrl}
+            qr={qr}
+            scanLabel={t.scan}
+            stamps={
+              welcomeProgress !== null && p.id === card.welcomeProgramId
+                ? welcomeProgress
+                : p.stamps
+            }
+            threshold={p.threshold}
+            animateStamp={
+              p.id === card.welcomeProgramId ? welcomeProgress : null
+            }
+          />
+        ))}
+        {card.rewards.map((r) => (
+          <RewardCard
+            key={r.id}
+            lang={lang}
+            title={t.cardHeading}
+            earned
+            celebrationKey={r.id}
+            name={
+              r.rewardNames?.[lang] ||
+              r.rewardNames?.ka ||
+              r.rewardNames?.en ||
+              r.rewardNames?.ru ||
+              r.label
+            }
+            description={
+              r.rewardDescriptions?.[lang] ||
+              r.rewardDescriptions?.ka ||
+              r.rewardDescriptions?.en ||
+              r.rewardDescriptions?.ru
+            }
+            image={r.rewardImageUrl}
+            qr={qr}
+            scanLabel={t.scan}
+          />
+        ))}
+        {card.programs.length === 0 && card.rewards.length === 0 && (
+          <section className="loyalty-card live-stamp-card">
+            <p>{t.empty}</p>
             {qr && (
               <img
                 className="loyalty-qr"
                 src={qr}
-                width={88}
-                height={88}
+                width={96}
+                height={96}
                 alt={t.scan}
               />
             )}
-          </footer>
-          {error && (
-            <p className="loyalty-error" role="alert">
-              {error}
-            </p>
-          )}
-        </section>
+          </section>
+        )}
+        {error && (
+          <p className="loyalty-error" role="alert">
+            {error}
+          </p>
+        )}
         <div className="stamp-card-meta">
+          <a
+            className="stamp-card-terms-button"
+            href={`/loyalty/legal?lang=${lang}`}
+          >
+            {t.terms}
+          </a>
           <div className="stamp-card-expiry-list">
             {card.programs
               .filter((p) => p.expiresAt && p.stamps > 0)
@@ -172,14 +184,12 @@ export default function LiveCard({
           </div>
         </div>
       </div>
-      <CardActions lang={lang} qr={qr} />
-      {card.programs.some((p) => p.id===card.welcomeProgramId && p.stamps >= 2) && (
-        <WelcomeAnimation
-          code={card.publicCode ?? code}
-          lang={lang}
-          onProgress={setWelcomeProgress}
-        />
-      )}
+      <CardActions
+        lang={lang}
+        qr={qr}
+        cardCode={card.publicCode ?? code}
+        ready={welcomeProgress === null}
+      />
     </main>
   );
 }

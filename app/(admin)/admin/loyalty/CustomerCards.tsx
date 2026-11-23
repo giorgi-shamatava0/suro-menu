@@ -2,18 +2,28 @@
 import { useMutation } from "convex/react";
 import { useRef, useState } from "react";
 import type { FunctionReturnType } from "convex/server";
+import { adminText } from "@/lib/loyalty/admin-copy";
+import type { CustomerLanguage } from "@/lib/loyalty/customer-copy";
+import { AdminCard } from "./CardFace";
 import { api } from "@/convex/_generated/api";
-export default function CustomerCards({ token }: { token: string }) {
+export default function CustomerCards({
+  token,
+  lang,
+}: {
+  token: string;
+  lang: CustomerLanguage;
+}) {
+  const tr = (s: string) => adminText(lang, s);
   const lookup = useMutation(api.loyalty.lookup),
-    redeem = useMutation(api.loyalty.redeem),
-    revoke = useMutation(api.loyalty.revokeCard),
-    reverse = useMutation(api.loyalty.reverse);
+    setPoints = useMutation(api.loyalty.setPoints),
+    revoke = useMutation(api.loyalty.revokeCard);
   const [card, setCard] = useState<FunctionReturnType<
       typeof api.loyalty.lookup
     > | null>(null),
     [code, setCode] = useState(""),
     [error, setError] = useState(""),
-    [busy, setBusy] = useState(false);
+    [busy, setBusy] = useState(false),
+    [editing, setEditing] = useState<string | null>(null);
   const lock = useRef(false),
     pending = useRef(new Map<string, string>());
   async function run(fn: () => Promise<unknown>) {
@@ -24,15 +34,15 @@ export default function CustomerCards({ token }: { token: string }) {
     try {
       await fn();
     } catch {
-      setError("Unable to update this card. Check the code and try again.");
+      setError(tr("Unable to update this card. Check the code and try again."));
     } finally {
       lock.current = false;
       setBusy(false);
     }
   }
   return (
-    <details className="admin-disclosure">
-      <summary>Find a customer card</summary>
+    <details className="admin-disclosure" open>
+      <summary>{tr("Customer card lookup")}</summary>
       <form
         className="loyalty-form"
         onSubmit={(e) => {
@@ -44,112 +54,115 @@ export default function CustomerCards({ token }: { token: string }) {
             /(?:^|\/(?:c|loyalty\/card)\/)([a-f0-9]{64}|[A-Za-z0-9_-]{22})$/,
           )?.[1];
           if (!id) {
-            setError("Paste a card link or identifier.");
+            setError(tr("Paste a card link or identifier."));
             return;
           }
           setCode(id);
+          setEditing(null);
+          setCard(null);
+          pending.current.clear();
           void run(async () => setCard(await lookup({ token, qr: id })));
         }}
       >
         <label>
-          Card link or identifier
+          {tr("Card link or identifier")}
           <input name="code" required maxLength={300} />
         </label>
-        <button disabled={busy}>Find card</button>
+        <button disabled={busy}>{tr("Find card")}</button>
       </form>
       {error && <p role="alert">{error}</p>}
       {card && (
         <section>
           {card.programs.map((p) => (
-            <p key={p._id}>
-              {p.name}:{" "}
-              <strong>
-                {p.stamps}/{p.threshold}
-              </strong>
-            </p>
-          ))}
-          {card.rewards
-            .filter((r) => r.status === "available")
-            .map((r) => (
-              <div className="loyalty-row" key={r._id}>
-                <strong>{r.label}</strong>
+            <div className="customer-card-preview" key={p._id}>
+              <AdminCard
+                lang={lang}
+                threshold={p.threshold}
+                stamps={p.stamps}
+                reward={p.rewardNames?.[lang] || p.reward}
+              />
+              <div className="form-actions">
+                <button
+                  disabled={busy}
+                  onClick={() => setEditing(editing === p._id ? null : p._id)}
+                >
+                  {tr("Edit points")}
+                </button>
                 <button
                   disabled={busy}
                   onClick={() => {
                     if (
+                      !confirm(tr("Delete this customer card?")) ||
                       !confirm(
-                        "Give this reward to the customer and mark it redeemed?",
+                        tr("Confirm deletion? This card will stop working."),
                       )
                     )
                       return;
                     void run(async () => {
-                      let key = pending.current.get(r._id);
-                      if (!key) {
-                        key = crypto.randomUUID();
-                        pending.current.set(r._id, key);
-                      }
-                      await redeem({
+                      await revoke({
                         token,
                         qr: code,
-                        rewardId: r._id,
-                        key,
-                        confirmed: true,
+                        reason: "Deleted by administrator",
                       });
-                      setCard(await lookup({ token, qr: code }));
+                      setCard(null);
+                      setEditing(null);
                     });
                   }}
                 >
-                  Redeem reward
+                  {tr("Delete")}
                 </button>
               </div>
-            ))}
-          <details>
-            <summary>Correct a stamp</summary>
-            {card.history
-              .filter((h) => h.kind === "award" && !h.reversedBy)
-              .map((h) => (
-                <div className="loyalty-row" key={h._id}>
-                  <span>
-                    {h.reference} · {h.count}
-                  </span>
-                  <button
-                    disabled={busy}
-                    onClick={() => {
-                      const reason = prompt(
-                        "Why should these stamps be removed?",
-                      );
-                      if (!reason?.trim()) return;
-                      void run(async () => {
-                        await reverse({ token, transactionId: h._id, reason });
-                        setCard(await lookup({ token, qr: code }));
+              {editing === p._id && (
+                <form
+                  className="loyalty-form"
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    const points = Number(
+                      new FormData(e.currentTarget).get("points"),
+                    );
+                    const signature = `${code}:${p._id}:${points}`;
+                    let key = pending.current.get(signature);
+                    if (!key) {
+                      key = crypto.randomUUID();
+                      pending.current.set(signature, key);
+                    }
+                    void run(async () => {
+                      await setPoints({
+                        token,
+                        qr: code,
+                        programId: p._id,
+                        points,
+                        key,
                       });
-                    }}
-                  >
-                    Undo stamps
-                  </button>
-                </div>
-              ))}
-          </details>
-          <details>
-            <summary>Deactivate this card</summary>
-            <button
-              disabled={busy}
-              onClick={() => {
-                const reason = prompt("Why should this card be deactivated?");
-                if (
-                  !reason?.trim() ||
-                  !confirm("Deactivate this card? This prevents further use.")
-                )
-                  return;
-                void run(async () => {
-                  await revoke({ token, qr: code, reason });
-                  setCard(null);
-                });
-              }}
-            >
-              Deactivate card
-            </button>
-          </details>
+                      setCard(await lookup({ token, qr: code }));
+                      setEditing(null);
+                      pending.current.delete(signature);
+                    });
+                  }}
+                >
+                  <label>
+                    {tr("Points")}
+                    <input
+                      name="points"
+                      type="number"
+                      min={0}
+                      max={p.threshold}
+                      defaultValue={p.stamps}
+                      required
+                    />
+                  </label>
+                  <div className="form-actions">
+                    <button className="loyalty-primary" disabled={busy}>
+                      {tr("Save")}
+                    </button>
+                    <button type="button" onClick={() => setEditing(null)}>
+                      {tr("Cancel")}
+                    </button>
+                  </div>
+                </form>
+              )}
+            </div>
+          ))}
         </section>
       )}
     </details>
