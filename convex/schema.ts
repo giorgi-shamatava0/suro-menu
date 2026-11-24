@@ -31,7 +31,7 @@ export const itemFields = {
   allergens: v.optional(v.array(v.string())),
   tags: v.optional(v.array(v.string())),
   photo: v.optional(v.id("_storage")),
-  display: v.optional(v.union(v.literal("none"), v.literal("small"), v.literal("big"))), // how the photo shows; unset = small
+  display: v.optional(v.union(v.literal("none"), v.literal("small"), v.literal("original"), v.literal("big"))), // how the photo shows; unset = small
   crop: v.optional(v.object({ x: v.number(), y: v.number(), z: v.number() })), // which part shows: position in %, zoom 1-3; unset = centred
   soldOut: v.optional(v.boolean()),
   hidden: v.optional(v.boolean()),

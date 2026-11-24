@@ -23,7 +23,7 @@ type Tr = { ka?: string; en?: string; ru?: string };
 type Tree = FunctionReturnType<typeof api.admin.tree>;
 type Versions = FunctionReturnType<typeof api.admin.versions>;
 type Item = Tree["items"][number];
-type Display = "none" | "small" | "big";
+type Display = "none" | "small" | "original" | "big";
 type Panel = { kind: "category"; id: Id<"categories"> } | { kind: "item"; id: Id<"items"> } | null;
 type OnDraft = (d: object) => void;
 
@@ -32,6 +32,7 @@ const TAGS = [["vegan", "Vegan"], ["vegetarian", "Vegetarian"], ["signature", "S
 const LAYOUTS: [Display, string, ReactNode][] = [
   ["none", "No photo", <svg key="n" viewBox="0 0 24 18" aria-hidden="true"><path d="M2 5h16M2 9h11M2 13h13" /></svg>],
   ["small", "Small", <svg key="s" viewBox="0 0 24 18" aria-hidden="true"><path d="M2 5h10M2 9h7M2 13h8" /><rect x="15" y="3" width="7" height="7" rx="1.5" /></svg>],
+  ["original", "Small original", <svg key="o" viewBox="0 0 24 18" aria-hidden="true"><path d="M2 5h8M2 9h6M2 13h7" /><rect x="12" y="3" width="10" height="7" rx="1.5" /></svg>],
   ["big", "Big", <svg key="b" viewBox="0 0 24 18" aria-hidden="true"><rect x="2" y="1" width="20" height="10" rx="1.5" /><path d="M2 14h13M2 17h8" /></svg>],
 ];
 
@@ -42,6 +43,7 @@ const TITLE_SIZES: [Doc<"sections">["titleSize"], string][] = [[undefined, "Auto
 const FRAMES: Record<Display, string> = {
   none: "The photo is kept but not shown on the menu.",
   small: "Square frame (1:1), beside the name. Upload at least 600 × 600 px.",
+  original: "Whole picture, no crop. Same height as Small; width follows the original proportions and fits the available space.",
   big: "Landscape frame (4:3), full width. Upload at least 1200 × 900 px.",
 };
 
@@ -866,7 +868,7 @@ function ItemForm({ token, item, compact, track, onDraft, fresh, onClose }: { to
       if (!r.ok) throw new Error();
       const { storageId } = await r.json();
       change({ photo: storageId, photoUrl: URL.createObjectURL(blob), crop: undefined, display: d.display === "none" ? undefined : d.display }, true);
-      setCropping(true);
+      setCropping(d.display !== "original");
     } catch {
       setUpErr("The photo could not be uploaded. Try another file.");
     } finally {
@@ -902,24 +904,26 @@ function ItemForm({ token, item, compact, track, onDraft, fresh, onClose }: { to
             <h3>Photo</h3>
             {d.photoUrl ? (
               <>
-                <span className="preview crop" data-size={d.display ?? "small"} style={cropVars(d.crop)}><img src={onScreen(d.photoUrl) ?? d.photoUrl} alt="" /></span>
+                <span className="preview crop" data-size={d.display ?? "small"} style={d.display === "original" ? undefined : cropVars(d.crop)}><img src={onScreen(d.photoUrl) ?? d.photoUrl} alt="" /></span>
                 <div className="photo-btns">
-                  <button className="secondary" onClick={() => setCropping(true)}>Edit</button>
+                  {d.display === "original" ? <label className="secondary file">Replace photo<input type="file" accept="image/*" disabled={busy} onChange={(e) => upload(e.target.files?.[0])} /></label> : <button className="secondary" onClick={() => setCropping(true)}>Edit</button>}
+                  {d.display === "original" && <button className="secondary" onClick={async () => { if (await ask({ title: "Remove this photo?", body: "The dish shows without a photo until you add one again.", yes: "Remove photo", danger: true })) change({ photo: undefined, photoUrl: null, crop: undefined }, true); }}>Remove photo</button>}
                 </div>
                 <div className="seg sizes" role="radiogroup" aria-label="Photo size on the menu">
                   {LAYOUTS.map(([k, l, icon]) => (
-                    <button key={k} role="radio" aria-checked={(d.display ?? "small") === k} aria-pressed={(d.display ?? "small") === k} onClick={() => change({ display: k }, true)}>{icon}{l}</button>
+                    <button key={k} role="radio" aria-checked={(d.display ?? "small") === k} aria-pressed={(d.display ?? "small") === k} onClick={() => { change({ display: k }, true); setCropping(false); }}>{icon}{l}</button>
                   ))}
                 </div>
                 <p className="hint">{FRAMES[d.display ?? "small"]}</p>
                 {cropping && <Cropper key={d.photoUrl} src={d.photoUrl} big={d.display === "big"} crop={d.crop} busy={busy} onReplace={upload}
                   onRemove={async () => { if (await ask({ title: "Remove this photo?", body: "The dish shows without a photo until you add one again.", yes: "Remove photo", danger: true })) { change({ photo: undefined, photoUrl: null, crop: undefined }, true); setCropping(false); } }}
+                  onOriginal={() => { change({ display: "original" }, true); setCropping(false); }}
                   onCancel={() => setCropping(false)} onDone={(crop) => { change({ crop }, true); setCropping(false); }} />}
               </>
             ) : (
               <label className="drop file">
                 <b>{busy ? "Uploading…" : "Add photo"}</b>
-                {!busy && <span>or drop one here. Small shows it square (1:1), Big 4:3 landscape.</span>}
+                {!busy && <span>or drop one here. Small shows it square (1:1), Small original keeps the whole picture, Big 4:3 landscape.</span>}
                 <input type="file" accept="image/*" onChange={(e) => upload(e.target.files?.[0])} disabled={busy} />
               </label>
             )}

@@ -31,9 +31,9 @@ export function onScreen(src: string) {
 
 // Edit a dish photo: the whole original with the frame guests see drawn on it (3×3 grid). Drag the frame to move it,
 // pull a corner to resize. The original is kept; only the frame's position and size are saved.
-export default function Cropper({ src, big, crop, busy, onReplace, onRemove, onDone, onCancel }: {
+export default function Cropper({ src, big, crop, busy, onReplace, onRemove, onOriginal, onDone, onCancel }: {
   src: string; big: boolean; crop?: Crop; busy: boolean;
-  onReplace: (f?: File) => void; onRemove: () => void; onDone: (c: Crop) => void; onCancel: () => void;
+  onOriginal: () => void; onReplace: (f?: File) => void; onRemove: () => void; onDone: (c: Crop) => void; onCancel: () => void;
 }) {
   const a = big ? 4 / 3 : 1;
   const [r, setR] = useState(0); // photo width / height, known once it loads
@@ -136,6 +136,7 @@ export default function Cropper({ src, big, crop, busy, onReplace, onRemove, onD
         </label>
         <button className="ghost" onClick={onRemove}>Remove</button>
         <span className="ce-gap" />
+        {!big && <button className="secondary" disabled={busy} onClick={onOriginal}>Use original</button>}
         <button className="secondary" onClick={onCancel}>Cancel</button>
         <button className="primary" disabled={!out} onClick={() => (touched.current && out ? onDone(out) : onCancel())}>Done</button>
       </div>

@@ -318,3 +318,7 @@ body:has(.lifted), body:has(.lifted) * { cursor: grabbing !important; user-selec
   .canvas .items .grip { position: static; opacity: 1; float: left; margin: 18px 4px 0 -8px; }
   .grid3 { grid-template-columns: 1fr 1fr; }
 }
+
+.preview[data-size="original"] { width: fit-content; max-width: 100%; height: 160px; aspect-ratio: auto; background: transparent; }
+.preview[data-size="original"] img { width: auto; max-width: 100%; height: 100%; object-fit: contain; transform: none; }
+.seg.sizes { flex-wrap: wrap; }

@@ -45,9 +45,9 @@ export function Row({ it, compact, t, onOpen }: { it: MenuItem; compact: boolean
   return (
     <Tag {...(Tag === "button" && { type: "button" as const, onClick: onOpen })} className={`item${photo ? " has-photo" : ""}${photo && it.big ? " big" : ""}${it.soldOut ? " is-sold" : ""}${it.hidden ? " is-hidden" : ""}`}>
       {photo && (
-        <span className="photo crop" style={cropVars(it.crop)}>
+        <span className={`photo crop${it.original ? " original" : ""}`} style={it.original ? undefined : cropVars(it.crop)}>
           <Image src={photo} alt="" width={it.big ? 1200 : 480} height={it.big ? 900 : 480} loading="lazy"
-            sizes={zoomSizes(it.big ? 640 : 160, it.big ? 92 : 0, it.crop?.z)} />
+            sizes={zoomSizes(it.big ? 640 : 160, it.big ? 92 : 0, it.original ? 1 : it.crop?.z)} />
         </span>
       )}
       <span className="text">

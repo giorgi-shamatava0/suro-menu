@@ -317,3 +317,7 @@ main[data-bg="f"] .sec:nth-child(3)::after { background: url(/decor/bg/shade-str
 /* ---------- developer credit, the last line of the page ---------- */
 .credit { position: absolute; z-index: 1; left: 0; right: 0; bottom: 0; margin: 0; padding: 0 var(--gut) 10px; text-align: center; font-size: 13px; line-height: 44px; color: var(--soft); text-shadow: 0 0 8px var(--night), 0 0 2px var(--night); }
 .credit a { color: inherit; text-underline-offset: 3px; }
+
+/* Keep the full original at the small-photo height; cap wide images to leave room for the name. */
+.item .photo.original { width: auto; height: clamp(92px, 27vw, 128px); max-width: 45%; aspect-ratio: auto; background: transparent; }
+.item .photo.original img { width: auto; height: 100%; max-width: 100%; object-fit: contain; object-position: center; transform: none; }

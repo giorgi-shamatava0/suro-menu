@@ -35,6 +35,7 @@ export function localize({ sections, settings: s }: Raw, lang: Lang) {
           tags: i.tags ?? [],
           photo: i.display === "none" ? null : i.photoUrl,
           big: i.display === "big",
+          original: i.display === "original",
           crop: i.crop,
           soldOut: !!i.soldOut,
           hidden: !!(i as Flag).hidden,
